@@ -1,0 +1,11 @@
+# reference material (original vanilla app + zips)
+.skeleton/
+CLAUDE.md
+
+# dependencies & build output
+node_modules/
+dist/
+*.tsbuildinfo
+
+# logs
+npm-debug.log*
