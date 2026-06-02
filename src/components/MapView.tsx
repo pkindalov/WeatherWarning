@@ -146,16 +146,22 @@ export default function MapView({
       cellRef.current = null;
     }
     if (!cell) return;
+    const color = LEVEL_COLOR[level];
     cellRef.current = L.marker([cell.lat, cell.lon], {
       icon: L.divIcon({
         className: "ww-cell",
-        html: '<div class="ww-cell-x">⚠</div>',
-        iconSize: [26, 26],
-        iconAnchor: [13, 13],
+        html:
+          '<div class="ww-cell-ring" style="--c:' +
+          color +
+          '"></div><div class="ww-cell-x" style="--c:' +
+          color +
+          '">⚠</div>',
+        iconSize: [28, 28],
+        iconAnchor: [14, 14],
       }),
       zIndexOffset: 900,
     }).addTo(map);
-  }, [ready, cell]);
+  }, [ready, cell, level]);
 
   /* ---- recenter / fit on the active location ---- */
   useEffect(() => {

@@ -17,7 +17,10 @@ import type {
 } from "../types";
 
 const MAPS_URL = "https://api.rainviewer.com/public/weather-maps.json";
-const SAMPLE_ZOOM = 8; // ~0.6 km/px at the equator
+// RainViewer's global radar tiles only exist up to zoom 7; zoom 8+ returns a
+// "Zoom Level Not Supported" placeholder image, which the sampler would otherwise
+// misread as junk echoes. Sample at the deepest real level. (~1.2 km/px at equator.)
+const SAMPLE_ZOOM = 7;
 const COLOR_SCHEME = 4; // multi-hue reflectivity ramp
 const tileCache = new Map<string, Promise<HTMLCanvasElement | null>>();
 

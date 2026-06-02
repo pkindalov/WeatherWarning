@@ -155,7 +155,10 @@ body {
 .ww-pin-dot { position: absolute; left: 50%; top: 50%; width: 14px; height: 14px; margin: -7px 0 0 -7px; border-radius: 50%; background: var(--c); border: 2.5px solid #fff; box-shadow: 0 1px 4px rgba(0,0,0,.35); }
 .ww-pin-ring { position: absolute; left: 50%; top: 50%; width: 14px; height: 14px; margin: -7px 0 0 -7px; border-radius: 50%; border: 2px solid var(--c); animation: ring 1.8s ease-out infinite; }
 @keyframes ring { 0% { transform: scale(1); opacity: .7; } 100% { transform: scale(3.4); opacity: 0; } }
-.ww-cell-x { display: grid; place-items: center; width: 26px; height: 26px; font-size: 16px; color: #fff; background: var(--danger, #e53935); border: 2px solid #fff; border-radius: 8px; box-shadow: 0 2px 6px rgba(0,0,0,.35); }
+.ww-cell { position: relative; }
+.ww-cell-x { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); display: grid; place-items: center; width: 26px; height: 26px; font-size: 16px; color: #fff; background: var(--c, #e53935); border: 2px solid #fff; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,.4); }
+.ww-cell-ring { position: absolute; left: 50%; top: 50%; width: 26px; height: 26px; margin: -13px 0 0 -13px; border-radius: 9px; border: 2px solid var(--c, #e53935); animation: cellpulse 1.4s ease-out infinite; }
+@keyframes cellpulse { 0% { transform: scale(1); opacity: .8; } 100% { transform: scale(2.7); opacity: 0; } }
 
 /* map overlays */
 .legend {
