@@ -28,9 +28,9 @@ describe("frameList", () => {
 });
 
 describe("radarTileTemplate", () => {
-  it("builds a Leaflet {z}/{x}/{y} tile template with the colour scheme", () => {
+  it("builds a 512px Leaflet {z}/{x}/{y} tile template with the colour scheme", () => {
     expect(radarTileTemplate("https://rv.example", "/v2/radar/123")).toBe(
-      "https://rv.example/v2/radar/123/256/{z}/{x}/{y}/4/1_1.png"
+      "https://rv.example/v2/radar/123/512/{z}/{x}/{y}/4/1_1.png"
     );
   });
 });
