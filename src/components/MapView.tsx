@@ -75,10 +75,15 @@ export default function MapView({
   useEffect(() => {
     if (!elRef.current) return;
     const map = L.map(elRef.current, {
-      zoomControl: false,
+      zoomControl: true,
       attributionControl: true,
+      scrollWheelZoom: true,
+      touchZoom: true,
+      doubleClickZoom: true,
       zoomSnap: 0.5,
     }).setView([20, 0], 3);
+
+    map.zoomControl.setPosition("topleft");
 
     L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png", {
       subdomains: "abcd",
@@ -179,6 +184,10 @@ export default function MapView({
     group.clearLayers();
     L.tileLayer(radarTileTemplate(host, f.path), {
       opacity: 0.72,
+      // RainViewer's global radar tiles only exist up to zoom 7; past that the
+      // server returns a "Zoom Level Not Supported" placeholder. Cap the native
+      // zoom so Leaflet upscales the z7 tile instead of requesting that placeholder.
+      maxNativeZoom: 7,
       maxZoom: 19,
       zIndex: 5,
       tileSize: 256,
