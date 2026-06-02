@@ -90,6 +90,41 @@ function loadTile(url: string): Promise<HTMLCanvasElement | null> {
   return p;
 }
 
+/* ---------- read dBZ at a single point (for the map picker) ----------
+   Uses the same smoothing-off sample tiles the analyzer reads, so the
+   reported value matches the warning engine. Caches decoded pixel data
+   per tile so repeated hovers over one tile are instant.                */
+const pointDataCache = new Map<string, Uint8ClampedArray | null>();
+
+export async function samplePointDbz(
+  host: string,
+  path: string,
+  lat: number,
+  lon: number
+): Promise<number | null> {
+  const z = SAMPLE_ZOOM;
+  const { px, py } = C.lonLatToPixel(lat, lon, z);
+  const nTiles = Math.pow(2, z);
+  const ty = Math.floor(py / 256);
+  if (ty < 0 || ty >= nTiles) return null;
+  const tx = Math.floor(px / 256);
+  const wx = ((tx % nTiles) + nTiles) % nTiles;
+  const url = sampleTileUrl(host, path, z, wx, ty);
+
+  let data = pointDataCache.get(url);
+  if (data === undefined) {
+    const cv = await loadTile(url);
+    data = cv ? cv.getContext("2d")!.getImageData(0, 0, 256, 256).data : null;
+    pointDataCache.set(url, data);
+  }
+  if (!data) return null;
+
+  const lx = ((Math.floor(px) % 256) + 256) % 256;
+  const ly = ((Math.floor(py) % 256) + 256) % 256;
+  const i = (ly * 256 + lx) * 4;
+  return C.colorToDbz(data[i], data[i + 1], data[i + 2], data[i + 3]);
+}
+
 /* ---------- sample one radar frame around a point ---------- */
 async function sampleFrame(
   host: string,

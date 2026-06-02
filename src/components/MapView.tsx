@@ -9,7 +9,7 @@ import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { useI18n } from "../i18n/I18nContext";
 import { LEGEND } from "../lib/core";
-import { radarTileTemplate } from "../lib/radar";
+import { radarTileTemplate, samplePointDbz } from "../lib/radar";
 import type { Level, NearestCell, RadarFrame, SavedLocation } from "../types";
 
 interface MapViewProps {
@@ -53,7 +53,7 @@ export default function MapView({
   baseTime,
   fitToken,
 }: MapViewProps) {
-  const { t, fmtClock } = useI18n();
+  const { t, fmtClock, dbzLabel } = useI18n();
 
   const elRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
@@ -70,6 +70,13 @@ export default function MapView({
 
   const [frameIdx, setFrameIdx] = useState(0);
   const [playing, setPlaying] = useState(false);
+  const [pick, setPick] = useState<{ dbz: number | null; x: number; y: number } | null>(null);
+
+  // refs so the (once-attached) picker handlers always read the live frame
+  const hostRef = useRef(host);
+  hostRef.current = host;
+  const frameRef = useRef<RadarFrame | undefined>(frames[frameIdx]);
+  frameRef.current = frames[frameIdx];
 
   /* ---- init map once ---- */
   useEffect(() => {
@@ -209,6 +216,46 @@ export default function MapView({
     return () => window.clearInterval(id);
   }, [playing, frames.length]);
 
+  /* ---- dBZ picker: read the radar value under the pointer/tap ---- */
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !ready) return;
+    let raf = 0;
+    let last: L.LeafletMouseEvent | null = null;
+
+    const read = (e: L.LeafletMouseEvent) => {
+      const f = frameRef.current;
+      const h = hostRef.current;
+      const { x, y } = e.containerPoint;
+      if (!f || !h) {
+        setPick({ dbz: null, x, y });
+        return;
+      }
+      void samplePointDbz(h, f.path, e.latlng.lat, e.latlng.lng).then((dbz) =>
+        setPick({ dbz, x, y })
+      );
+    };
+    const onMove = (e: L.LeafletMouseEvent) => {
+      last = e;
+      if (raf) return;
+      raf = requestAnimationFrame(() => {
+        raf = 0;
+        if (last) read(last);
+      });
+    };
+    const onOut = () => setPick(null);
+
+    map.on("mousemove", onMove);
+    map.on("mouseout", onOut);
+    map.on("click", read);
+    return () => {
+      map.off("mousemove", onMove);
+      map.off("mouseout", onOut);
+      map.off("click", read);
+      if (raf) cancelAnimationFrame(raf);
+    };
+  }, [ready]);
+
   /* ---- time pill label ---- */
   const f = frames[frameIdx];
   let pillLabel = t("pill_now");
@@ -230,6 +277,17 @@ export default function MapView({
   return (
     <div className="mapwrap">
       <div id="map" ref={elRef} />
+
+      {pick && (
+        <>
+          <div className="map-pick-dot" style={{ left: pick.x, top: pick.y }} />
+          <div className="map-pick" style={{ left: pick.x, top: pick.y }}>
+            {pick.dbz != null
+              ? `${Math.round(pick.dbz)} dBZ · ${dbzLabel(pick.dbz)}`
+              : t("d_no_echo")}
+          </div>
+        </>
+      )}
 
       <div className="legend">
         <div className="legend-title">{t("legend_title")}</div>

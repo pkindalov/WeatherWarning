@@ -172,6 +172,24 @@ body {
 .legend-bar i { flex: 1; }
 .legend-scale { display: flex; justify-content: space-between; font-family: var(--mono); font-size: 8.5px; color: var(--ink-3); margin-top: 3px; }
 
+/* dBZ picker readout that follows the pointer */
+.map-pick-dot {
+  position: absolute; z-index: 515; pointer-events: none;
+  width: 12px; height: 12px; margin: -6px 0 0 -6px; border-radius: 50%;
+  border: 2px solid #fff; background: rgba(20,30,48,.55); box-shadow: 0 1px 3px rgba(0,0,0,.4);
+}
+.map-pick {
+  position: absolute; z-index: 520; pointer-events: none;
+  transform: translate(-50%, calc(-100% - 12px)); white-space: nowrap;
+  background: rgba(20,30,48,.88); color: #fff; font-family: var(--mono);
+  font-size: 11px; font-weight: 500; padding: 4px 9px; border-radius: 8px;
+  box-shadow: var(--shadow-soft);
+}
+.map-pick::after {
+  content: ""; position: absolute; left: 50%; bottom: -5px; transform: translateX(-50%);
+  border: 5px solid transparent; border-bottom: 0; border-top-color: rgba(20,30,48,.88);
+}
+
 .map-time {
   position: absolute; right: 10px; top: 10px; z-index: 500;
   background: rgba(255,255,255,.92); backdrop-filter: blur(6px);
