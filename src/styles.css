@@ -145,7 +145,10 @@ body {
 @keyframes pulse { 0%,100% { box-shadow: 0 0 0 0 rgba(229,57,53,.5); } 50% { box-shadow: 0 0 0 7px rgba(229,57,53,0); } }
 
 /* ---------- map ---------- */
-.mapwrap { position: relative; flex: 1 1 auto; margin: 12px 16px 0; border-radius: var(--r-lg); overflow: hidden; border: 1px solid var(--line); box-shadow: var(--shadow-soft); min-height: 200px; }
+/* isolation: isolate keeps Leaflet's own controls (the +/- zoom buttons sit at
+   z-index 1000) trapped inside the map's stacking context, so they can't paint
+   over the settings/locations sheets that open above the map. */
+.mapwrap { position: relative; isolation: isolate; flex: 1 1 auto; margin: 12px 16px 0; border-radius: var(--r-lg); overflow: hidden; border: 1px solid var(--line); box-shadow: var(--shadow-soft); min-height: 200px; }
 #map { position: absolute; inset: 0; background: var(--surface-2); }
 .leaflet-container { font-family: var(--font); background: var(--surface-2); }
 .leaflet-control-attribution { font-size: 9px !important; background: rgba(255,255,255,.7) !important; }
