@@ -21,7 +21,9 @@ const MAPS_URL = "https://api.rainviewer.com/public/weather-maps.json";
 // "Zoom Level Not Supported" placeholder image, which the sampler would otherwise
 // misread as junk echoes. Sample at the deepest real level. (~1.2 km/px at equator.)
 const SAMPLE_ZOOM = 7;
-const COLOR_SCHEME = 4; // multi-hue reflectivity ramp
+// "Universal Blue" — the palette RainViewer actually renders for radar tiles,
+// and the one core.colorToDbz reverse-maps to recover real dBZ values.
+const COLOR_SCHEME = 2;
 const tileCache = new Map<string, Promise<HTMLCanvasElement | null>>();
 
 interface MapsData {

@@ -61,42 +61,39 @@ describe("rgbToHsl", () => {
   });
 });
 
-describe("colorToDbz (radar colour classifier)", () => {
+describe("colorToDbz (RainViewer Universal Blue lookup)", () => {
   it("returns null for transparent pixels", () => {
     expect(colorToDbz(255, 0, 0, 0)).toBeNull();
   });
 
-  it("returns null for greyish artefacts", () => {
-    expect(colorToDbz(128, 128, 128, 255)).toBeNull();
+  it("reads exact palette colours as their true dBZ", () => {
+    // values straight from RainViewer's Universal Blue rain table
+    expect(colorToDbz(130, 123, 105, 73)).toBe(0); // faint tan = light precip
+    expect(colorToDbz(206, 192, 135, 150)).toBe(10); // brighter tan
+    expect(colorToDbz(136, 221, 238, 255)).toBe(15); // light cyan
+    expect(colorToDbz(0, 71, 104, 255)).toBe(34); // deep blue
+    expect(colorToDbz(255, 238, 0, 255)).toBe(35); // yellow
+    expect(colorToDbz(255, 170, 0, 255)).toBe(40); // orange
+    expect(colorToDbz(193, 0, 0, 255)).toBe(50); // red
+    expect(colorToDbz(255, 170, 255, 255)).toBe(55); // magenta
+    expect(colorToDbz(255, 255, 255, 255)).toBe(65); // white = extreme core
   });
 
-  it("treats near-white as an extreme core", () => {
-    expect(colorToDbz(255, 255, 255, 255)).toBe(67);
+  it("does NOT read the faint tan low band as heavy rain (phantom-overhead fix)", () => {
+    // these tan pixels are the lightest precip; the old hue guesser called them 45 dBZ
+    expect(colorToDbz(130, 123, 105, 73)).toBeLessThan(20);
+    expect(colorToDbz(222, 208, 151, 190)).toBeLessThan(20);
   });
 
-  it("maps the colour ramp to ascending dBZ bands", () => {
-    const blue = colorToDbz(0, 0, 255, 255)!;
-    const green = colorToDbz(0, 255, 0, 255)!;
-    const yellow = colorToDbz(255, 255, 0, 255)!;
-    const orange = colorToDbz(255, 140, 0, 255)!;
-    const red = colorToDbz(255, 0, 0, 255)!;
-    const magenta = colorToDbz(255, 0, 255, 255)!;
-
-    expect(blue).toBeCloseTo(16, 1);
-    expect(yellow).toBe(38);
-    expect(orange).toBe(45);
-    expect(red).toBe(52);
-    expect(magenta).toBe(62);
-    // bands should increase along the ramp
-    expect(blue).toBeLessThan(green);
-    expect(green).toBeLessThan(yellow);
-    expect(yellow).toBeLessThan(orange);
-    expect(orange).toBeLessThan(red);
+  it("orders deeper blue as stronger than light cyan", () => {
+    const lightCyan = colorToDbz(136, 221, 238, 255)!;
+    const deepBlue = colorToDbz(0, 71, 104, 255)!;
+    expect(deepBlue).toBeGreaterThan(lightCyan);
   });
 
-  it("reads darker red as stronger than bright red", () => {
-    expect(colorToDbz(120, 0, 0, 255)).toBe(57);
-    expect(colorToDbz(255, 0, 0, 255)).toBe(52);
+  it("snaps near-palette colours to the closest dBZ", () => {
+    expect(colorToDbz(252, 235, 5, 255)).toBe(35); // ~yellow → 35
+    expect(colorToDbz(190, 5, 5, 255)).toBe(50); // ~red → 50
   });
 });
 

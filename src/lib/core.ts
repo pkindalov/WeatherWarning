@@ -81,47 +81,56 @@ export function rgbToHsl(r: number, g: number, b: number) {
   return { h, s, l };
 }
 
-/* ---------- colour → estimated dBZ ----------
-   Works on any standard perceptual reflectivity ramp
-   (light blue/green → yellow → orange → red → magenta → white).
-   We read a rendered radar pixel and map it to a dBZ band.
-   Returns null for "no echo" (transparent / near-transparent).        */
-export function colorToDbz(r: number, g: number, b: number, a: number): number | null {
-  if (a < 40) return null; // transparent => no precip
-  const { h, s, l } = rgbToHsl(r, g, b);
-  if (s < 0.12 && l > 0.85) return 67; // near-white = extreme core
-  if (s < 0.1) return null; // greyish artefact, ignore
+/* ---------- colour → dBZ ----------
+   RainViewer renders radar reflectivity with the "Universal Blue" palette
+   (it serves this palette for the radar tiles regardless of the requested
+   colour-scheme id). Rather than guess dBZ from hue, we look the sampled
+   pixel up in RainViewer's own authoritative dBZ↔RGBA table, so the reported
+   value is the real reflectivity for that colour.
+   Source: https://www.rainviewer.com/files/rainviewer_api_colors_table.csv
+   Returns null for "no echo" (transparent / near-transparent).          */
 
-  // hue families along the ramp
-  if (h >= 170 && h < 250) {
-    // cyan / blue  (drizzle-light)
-    return 12 + l * 8; // ~12–20
+// [dBZ, r, g, b] for every opaque-enough Universal Blue rain colour. The faint
+// −10…14 dBZ band is a semi-transparent tan ramp; 65 dBZ and up render white.
+const UB_PALETTE: ReadonlyArray<readonly [number, number, number, number]> = [
+  [-10, 99, 97, 89], [-9, 102, 99, 90], [-8, 105, 102, 92], [-7, 108, 104, 93],
+  [-6, 111, 107, 95], [-5, 114, 110, 97], [-4, 117, 112, 98], [-3, 120, 115, 100],
+  [-2, 124, 117, 101], [-1, 127, 120, 103], [0, 130, 123, 105], [1, 133, 125, 106],
+  [2, 136, 128, 108], [3, 139, 130, 109], [4, 142, 133, 111], [5, 146, 136, 113],
+  [6, 158, 147, 117], [7, 170, 158, 121], [8, 182, 169, 126], [9, 194, 180, 130],
+  [10, 206, 192, 135], [11, 210, 196, 139], [12, 214, 200, 143], [13, 218, 204, 147],
+  [14, 222, 208, 151], [15, 136, 221, 238], [16, 108, 209, 235], [17, 81, 197, 232],
+  [18, 54, 186, 229], [19, 27, 174, 226], [20, 0, 163, 224], [21, 0, 154, 213],
+  [22, 0, 145, 202], [23, 0, 136, 191], [24, 0, 127, 180], [25, 0, 119, 170],
+  [26, 0, 112, 163], [27, 0, 105, 156], [28, 0, 98, 149], [29, 0, 91, 142],
+  [30, 0, 85, 136], [31, 0, 81, 128], [32, 0, 78, 120], [33, 0, 74, 112],
+  [34, 0, 71, 104], [35, 255, 238, 0], [36, 255, 224, 0], [37, 255, 210, 0],
+  [38, 255, 197, 0], [39, 255, 183, 0], [40, 255, 170, 0], [41, 255, 159, 0],
+  [42, 255, 149, 0], [43, 255, 139, 0], [44, 255, 129, 0], [45, 255, 68, 0],
+  [46, 242, 54, 0], [47, 230, 40, 0], [48, 217, 27, 0], [49, 205, 13, 0],
+  [50, 193, 0, 0], [51, 168, 0, 0], [52, 143, 0, 0], [53, 118, 0, 0],
+  [54, 93, 0, 0], [55, 255, 170, 255], [56, 255, 159, 255], [57, 255, 149, 255],
+  [58, 255, 139, 255], [59, 255, 129, 255], [60, 255, 119, 255], [61, 255, 108, 255],
+  [62, 255, 98, 255], [63, 255, 88, 255], [64, 255, 78, 255], [65, 255, 255, 255],
+];
+
+const ALPHA_NO_ECHO = 40; // below this the pixel is transparent ⇒ no precip
+
+export function colorToDbz(r: number, g: number, b: number, a: number): number | null {
+  if (a < ALPHA_NO_ECHO) return null;
+  let bestDbz = UB_PALETTE[0][0];
+  let bestDist = Infinity;
+  for (const [dbz, pr, pg, pb] of UB_PALETTE) {
+    const dr = r - pr;
+    const dg = g - pg;
+    const db = b - pb;
+    const dist = dr * dr + dg * dg + db * db;
+    if (dist < bestDist) {
+      bestDist = dist;
+      bestDbz = dbz;
+    }
   }
-  if (h >= 80 && h < 170) {
-    // green
-    return 22 + ((170 - h) / 90) * 12; // ~22–34
-  }
-  if (h >= 55 && h < 80) {
-    // yellow
-    return 38;
-  }
-  if (h >= 30 && h < 55) {
-    // orange
-    return 45;
-  }
-  if (h >= 345 || h < 30) {
-    // red family
-    return l < 0.42 ? 57 : 52; // darker red = stronger
-  }
-  if (h >= 290 && h < 345) {
-    // magenta / pink
-    return 62;
-  }
-  if (h >= 250 && h < 290) {
-    // violet / purple
-    return 66;
-  }
-  return 40; // fallback mid value
+  return bestDbz;
 }
 
 /* ---------- dBZ → label & legend ramp ---------- */
