@@ -166,6 +166,14 @@ export function dbzColor(dbz: number | null) {
   return out;
 }
 
+// The dBZ range a legend band covers, e.g. "20–40" for the rain band or
+// "60+" for the open-ended top band. Used by the legend's hover/tap tooltip.
+export function dbzBandRange(index: number): string {
+  const lo = LEGEND[index].dbz;
+  const hi = LEGEND[index + 1] ? LEGEND[index + 1].dbz : null;
+  return hi != null ? `${lo}–${hi}` : `${lo}+`;
+}
+
 /* ---------- formatting ---------- */
 export function fmtKm(km: number | null) {
   if (km == null) return "—";

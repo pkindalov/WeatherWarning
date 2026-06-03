@@ -8,7 +8,7 @@ import { useEffect, useRef, useState, type CSSProperties } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { useI18n } from "../i18n/I18nContext";
-import { LEGEND, dbzColor } from "../lib/core";
+import { LEGEND, dbzColor, dbzBandRange } from "../lib/core";
 import { radarTileTemplate, samplePointDbz } from "../lib/radar";
 import { lastPastIndex, nowMarkerPercent } from "../lib/playback";
 import type { Level, NearestCell, RadarFrame, SavedLocation } from "../types";
@@ -72,6 +72,16 @@ export default function MapView({
   const [frameIdx, setFrameIdx] = useState(0);
   const [playing, setPlaying] = useState(false);
   const [pick, setPick] = useState<{ dbz: number | null; x: number; y: number } | null>(null);
+
+  // legend: which band's tooltip is showing, whether it's open, and its dragged
+  // position (null = the default CSS bottom-left corner).
+  const [legendTip, setLegendTip] = useState<number | null>(null);
+  const [legendOpen, setLegendOpen] = useState(true);
+  const [legendPos, setLegendPos] = useState<{ x: number; y: number } | null>(null);
+  const [legendDrag, setLegendDrag] = useState(false);
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const legendRef = useRef<HTMLDivElement>(null);
+  const dragOffset = useRef({ x: 0, y: 0 });
 
   // refs so the (once-attached) picker handlers always read the live frame
   const hostRef = useRef(host);
@@ -291,9 +301,36 @@ export default function MapView({
   const pickClass =
     "map-pick" + (pickBigHail ? " map-pick--hail" : pickHail ? " map-pick--storm" : "");
 
+  /* ---- drag the legend around the map (pointer = mouse + touch) ---- */
+  const onLegendDragStart = (e: React.PointerEvent) => {
+    const wrap = wrapRef.current;
+    const leg = legendRef.current;
+    if (!wrap || !leg) return;
+    const wr = wrap.getBoundingClientRect();
+    const lr = leg.getBoundingClientRect();
+    dragOffset.current = { x: e.clientX - lr.left, y: e.clientY - lr.top };
+    setLegendPos({ x: lr.left - wr.left, y: lr.top - wr.top });
+    setLegendDrag(true);
+    e.currentTarget.setPointerCapture(e.pointerId);
+  };
+  const onLegendDragMove = (e: React.PointerEvent) => {
+    if (!legendDrag) return;
+    const wrap = wrapRef.current;
+    const leg = legendRef.current;
+    if (!wrap || !leg) return;
+    const wr = wrap.getBoundingClientRect();
+    const x = Math.max(0, Math.min(e.clientX - wr.left - dragOffset.current.x, wr.width - leg.offsetWidth));
+    const y = Math.max(0, Math.min(e.clientY - wr.top - dragOffset.current.y, wr.height - leg.offsetHeight));
+    setLegendPos({ x, y });
+  };
+  const onLegendDragEnd = (e: React.PointerEvent) => {
+    setLegendDrag(false);
+    e.currentTarget.releasePointerCapture(e.pointerId);
+  };
+
   return (
     <>
-      <div className="mapwrap">
+      <div className="mapwrap" ref={wrapRef}>
         <div id="map" ref={elRef} />
 
       {pick && (
@@ -307,21 +344,66 @@ export default function MapView({
         </>
       )}
 
-      <div className="legend">
-        <div className="legend-title">{t("legend_title")}</div>
-        <div className="legend-bar">
-          {LEGEND.map((s) => (
-            <i key={s.key} style={{ background: s.color }} />
-          ))}
+      {legendOpen ? (
+        <div
+          ref={legendRef}
+          className={"legend" + (legendDrag ? " legend--dragging" : "")}
+          style={legendPos ? { left: legendPos.x, top: legendPos.y, bottom: "auto" } : undefined}
+        >
+          <div
+            className="legend-head"
+            onPointerDown={onLegendDragStart}
+            onPointerMove={onLegendDragMove}
+            onPointerUp={onLegendDragEnd}
+          >
+            <span className="legend-title">{t("legend_title")}</span>
+            <button
+              className="legend-btn"
+              aria-label={t("legend_hide")}
+              title={t("legend_hide")}
+              onPointerDown={(e) => e.stopPropagation()}
+              onClick={() => setLegendOpen(false)}
+            >
+              ×
+            </button>
+          </div>
+          <div className="legend-bar">
+            {LEGEND.map((s, i) => (
+              <i
+                key={s.key}
+                className="legend-seg"
+                style={{ background: s.color }}
+                onMouseEnter={() => setLegendTip(i)}
+                onMouseLeave={() => setLegendTip((c) => (c === i ? null : c))}
+                onClick={() => setLegendTip((c) => (c === i ? null : i))}
+              />
+            ))}
+          </div>
+          <div className="legend-scale">
+            <span>0</span>
+            <span>20</span>
+            <span>40</span>
+            <span>50</span>
+            <span>60+</span>
+          </div>
+          {legendTip != null && (
+            <div className="legend-tip">
+              {dbzBandRange(legendTip)} dBZ · {t("lbl_" + LEGEND[legendTip].key)}
+            </div>
+          )}
         </div>
-        <div className="legend-scale">
-          <span>0</span>
-          <span>20</span>
-          <span>40</span>
-          <span>50</span>
-          <span>60+</span>
-        </div>
-      </div>
+      ) : (
+        <button
+          className="legend-show"
+          aria-label={t("legend_show")}
+          title={t("legend_show")}
+          onClick={() => setLegendOpen(true)}
+        >
+          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <path d="M4 6h16v2H4zM4 11h16v2H4zM4 16h16v2H4z" />
+          </svg>
+        </button>
+      )}
 
       <div className={"map-time" + (future ? " future" : "")}>
         <span className="pill">{pillLabel}</span>

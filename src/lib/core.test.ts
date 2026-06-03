@@ -3,6 +3,7 @@ import {
   bearingDeg,
   colorToDbz,
   compass,
+  dbzBandRange,
   dbzColor,
   dbzLabel,
   fmtClock,
@@ -111,6 +112,12 @@ describe("dBZ labels & colours", () => {
     expect(dbzColor(null)).toBe("#cfd8e0");
     expect(dbzColor(55)).toBe("#e53935"); // small hail → red
     expect(dbzColor(63)).toBe("#c026d3"); // large hail → magenta
+  });
+
+  it("describes each legend band's dBZ range", () => {
+    expect(dbzBandRange(0)).toBe("0–20");
+    expect(dbzBandRange(2)).toBe("40–50");
+    expect(dbzBandRange(4)).toBe("60+"); // open-ended top band
   });
 });
 

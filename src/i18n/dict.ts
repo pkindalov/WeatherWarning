@@ -61,6 +61,8 @@ export const DICT: Record<Lang, Record<string, string>> = {
 
     // map
     legend_title: "Отражение · dBZ",
+    legend_hide: "Скрий легендата",
+    legend_show: "Покажи легендата",
     pill_now: "Сега",
     pill_past: "Минало",
     pill_forecast: "Прогноза",
@@ -184,6 +186,8 @@ export const DICT: Record<Lang, Record<string, string>> = {
     auto_hint: "· auto {n}m",
 
     legend_title: "Reflectivity · dBZ",
+    legend_hide: "Hide legend",
+    legend_show: "Show legend",
     pill_now: "Now",
     pill_past: "Past",
     pill_forecast: "Forecast",
