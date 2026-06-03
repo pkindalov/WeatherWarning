@@ -295,9 +295,14 @@ export default function MapView({
     }
   }
 
-  // escalate the picker readout over hail-capable cells
-  const pickHail = pick?.dbz != null && pick.dbz >= 50; // storms + small hail and up
-  const pickBigHail = pick?.dbz != null && pick.dbz >= 60; // large, damaging hail
+  // Escalate the picker readout in step with the legend bands, so the pill's
+  // colour always matches the cell's colour on the map. Reading the thresholds
+  // from LEGEND stops them drifting the way the old hard-coded 50/60 did, which
+  // left a 55 dBZ magenta cell wearing a red "storm" pill.
+  const smallHailDbz = LEGEND.find((s) => s.key === "hail_small")!.dbz;
+  const largeHailDbz = LEGEND.find((s) => s.key === "hail_large")!.dbz;
+  const pickHail = pick?.dbz != null && pick.dbz >= smallHailDbz; // red band and up
+  const pickBigHail = pick?.dbz != null && pick.dbz >= largeHailDbz; // magenta band
   const pickClass =
     "map-pick" + (pickBigHail ? " map-pick--hail" : pickHail ? " map-pick--storm" : "");
 
@@ -393,9 +398,9 @@ export default function MapView({
           <div className="legend-scale">
             <span>0</span>
             <span>20</span>
-            <span>40</span>
-            <span>50</span>
-            <span>60+</span>
+            <span>35</span>
+            <span>45</span>
+            <span>55+</span>
           </div>
           {legendTip != null && (
             <div className="legend-tip">

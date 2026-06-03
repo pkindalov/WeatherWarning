@@ -10,6 +10,7 @@ import {
   fmtKm,
   fmtTimeAgo,
   haversineKm,
+  LEGEND,
   lonLatToPixel,
   metresPerPixel,
   pixelToLonLat,
@@ -103,21 +104,42 @@ describe("dBZ labels & colours", () => {
     expect(dbzLabel(null)).toBe("No echo");
     expect(dbzLabel(5)).toBe("Light rain / mist");
     expect(dbzLabel(25)).toBe("Rain / snow");
-    expect(dbzLabel(45)).toBe("Heavy rain");
-    expect(dbzLabel(55)).toBe("Storm · small hail");
+    expect(dbzLabel(40)).toBe("Heavy rain");
+    expect(dbzLabel(50)).toBe("Storm · small hail");
+    expect(dbzLabel(55)).toBe("Extreme · large hail"); // magenta band starts at 55
     expect(dbzLabel(63)).toBe("Extreme · large hail");
   });
 
-  it("uses alarming colours for hail bands", () => {
+  it("colours hail bands to match RainViewer's red→magenta transition", () => {
     expect(dbzColor(null)).toBe("#cfd8e0");
-    expect(dbzColor(55)).toBe("#e53935"); // small hail → red
-    expect(dbzColor(63)).toBe("#c026d3"); // large hail → magenta
+    expect(dbzColor(50)).toBe("#c10000"); // small hail → red (UB 50)
+    expect(dbzColor(55)).toBe("#ff77ff"); // large hail → magenta (UB 60)
+    expect(dbzColor(63)).toBe("#ff77ff");
   });
 
   it("describes each legend band's dBZ range", () => {
     expect(dbzBandRange(0)).toBe("0–20");
-    expect(dbzBandRange(2)).toBe("40–50");
-    expect(dbzBandRange(4)).toBe("60+"); // open-ended top band
+    expect(dbzBandRange(2)).toBe("35–45");
+    expect(dbzBandRange(4)).toBe("55+"); // open-ended top band
+  });
+
+  it("keeps every legend swatch on RainViewer's palette, inside its own band", () => {
+    // Guards the legend↔tile alignment: each swatch must be a real Universal
+    // Blue colour whose recovered dBZ lands within the band it heads, so the
+    // legend can never silently drift away from the colours on the map again.
+    const hexToRgb = (hex: string): [number, number, number] => [
+      parseInt(hex.slice(1, 3), 16),
+      parseInt(hex.slice(3, 5), 16),
+      parseInt(hex.slice(5, 7), 16),
+    ];
+    LEGEND.forEach((stop, i) => {
+      const [r, g, b] = hexToRgb(stop.color);
+      const recovered = colorToDbz(r, g, b, 255);
+      expect(recovered).not.toBeNull();
+      expect(recovered!).toBeGreaterThanOrEqual(stop.dbz);
+      const next = LEGEND[i + 1];
+      if (next) expect(recovered!).toBeLessThan(next.dbz);
+    });
   });
 });
 

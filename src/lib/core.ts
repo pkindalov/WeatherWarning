@@ -141,15 +141,18 @@ export interface LegendStop {
   key: string;
 }
 
-// 5 bands following the standard dBZ interpretation. The two hail bands use
-// deliberately alarming colours (red, then vivid magenta) so dangerous cells
-// stand out from ordinary rain.
+// 5 bands whose breaks sit on RainViewer's actual colour transitions and whose
+// swatches are sampled straight from the Universal Blue palette (UB_PALETTE
+// above). This keeps the legend an honest key to the radar tiles: the magenta
+// band starts at 55 dBZ because that is where RainViewer's tiles turn magenta,
+// not at the textbook large-hail threshold. The core.test "legend swatches stay
+// on RainViewer's palette" test guards this alignment.
 export const LEGEND: LegendStop[] = [
-  { dbz: 0, color: "#74c7ec", label: "Light rain / mist", key: "mist" }, //  0–20: light rain / mist
-  { dbz: 20, color: "#40b15f", label: "Rain / snow", key: "rain" }, // 20–40: light–moderate rain/snow
-  { dbz: 40, color: "#f5a623", label: "Heavy rain", key: "downpour" }, // 40–50: heavy downpours
-  { dbz: 50, color: "#e53935", label: "Storm · small hail", key: "hail_small" }, // 50–60: storms, small hail
-  { dbz: 60, color: "#c026d3", label: "Extreme · large hail", key: "hail_large" }, // 60+: large, damaging hail
+  { dbz: 0, color: "#88ddee", label: "Light rain / mist", key: "mist" }, //  0–20: light cyan (UB 15)
+  { dbz: 20, color: "#0077aa", label: "Rain / snow", key: "rain" }, // 20–35: blue (UB 25)
+  { dbz: 35, color: "#ffaa00", label: "Heavy rain", key: "downpour" }, // 35–45: yellow→orange (UB 40)
+  { dbz: 45, color: "#c10000", label: "Storm · small hail", key: "hail_small" }, // 45–55: red (UB 50)
+  { dbz: 55, color: "#ff77ff", label: "Extreme · large hail", key: "hail_large" }, // 55+: magenta (UB 60)
 ];
 
 export function dbzLabel(dbz: number | null) {
