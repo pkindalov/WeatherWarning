@@ -49,6 +49,7 @@ export default function App() {
     subKey: "st_locating_sub",
   });
   const [refreshing, setRefreshing] = useState(false);
+  const [refreshedAt, setRefreshedAt] = useState<number | null>(null);
   const [frames, setFrames] = useState<RadarFrame[]>([]);
   const [host, setHost] = useState("");
   const [baseTime, setBaseTime] = useState(Date.now() / 1000);
@@ -141,8 +142,12 @@ export default function App() {
     if (!res.tainted) maybeAlert(loc, res);
   }
 
-  /* ---- refresh ---- */
-  async function refresh(opts?: { fit?: boolean }) {
+  /* ---- refresh ----
+     `force` re-fetches the RainViewer index and the radar frames so a manual
+     refresh can actually pull a newer frame; without it analyze() reuses the
+     index cached for 60s (and the footer "updated" time, tied to the frame,
+     never moves). Mirrors the auto-refresh interval below. */
+  async function refresh(opts?: { fit?: boolean; force?: boolean }) {
     const loc = getActive();
     if (!loc) {
       promptManual();
@@ -151,8 +156,16 @@ export default function App() {
     setRefreshing(true);
     if (opts?.fit) setFitToken((x) => x + 1);
     try {
+      if (opts?.force) {
+        const data = await R.loadMaps(true);
+        const fl = R.frameList(data);
+        setHost(data.host);
+        setBaseTime((prev) => (fl.past.length ? fl.past[fl.past.length - 1].time : prev));
+        setFrames(fl.all);
+      }
       const res = await R.analyze(loc, settings);
       applyResult(loc, res);
+      if (!res.tainted) setRefreshedAt(Date.now() / 1000);
     } catch {
       toast(t("t_radar_unavail"));
       sysStatus("safe", "st_unavail_title", "st_unavail_sub");
@@ -310,7 +323,7 @@ export default function App() {
         refreshing={refreshing}
         onRefresh={() => {
           N.unlockAudio();
-          void refresh({ fit: false });
+          void refresh({ fit: false, force: true });
         }}
         onSettings={() => setSheet("settings")}
       />
@@ -338,7 +351,12 @@ export default function App() {
 
       <Details result={result} />
 
-      <FootBar result={result} showNotifCta={showNotifCta} onEnableNotif={() => void enableNotif()} />
+      <FootBar
+        result={result}
+        refreshedAt={refreshedAt}
+        showNotifCta={showNotifCta}
+        onEnableNotif={() => void enableNotif()}
+      />
 
       <AlertPop state={alertPop} onClose={() => setAlertPop((s) => ({ ...s, show: false }))} />
       <Toast msg={toastState.msg} show={toastState.show} />

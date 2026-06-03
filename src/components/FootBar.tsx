@@ -4,23 +4,47 @@ import type { AnalysisResult } from "../types";
 
 interface FootBarProps {
   result: AnalysisResult | null;
+  refreshedAt: number | null;
   showNotifCta: boolean;
   onEnableNotif: () => void;
 }
 
-export default function FootBar({ result, showNotifCta, onEnableNotif }: FootBarProps) {
+// The i18n helpers the footer text needs, passed in so the builder stays a
+// pure function (no React/context) and can be unit-tested.
+interface UpdatedTextDeps {
+  t: (key: string, params?: Record<string, string | number>) => string;
+  fmtTimeAgo: (ts: number) => string;
+  fmtClock: (ts: number) => string;
+}
+
+// Build the footer "updated" line. The time shown is `refreshedAt` — the moment
+// the user (or auto-refresh) last pulled data — NOT the radar frame time, which
+// lags ~10 min behind RainViewer and made the line look frozen after a refresh.
+export function buildUpdatedText(
+  result: AnalysisResult | null,
+  refreshedAt: number | null,
+  autoRefresh: boolean,
+  autoRefreshMin: number,
+  deps: UpdatedTextDeps
+): string {
+  if (!result) return "—";
+  const { t, fmtTimeAgo, fmtClock } = deps;
+  if (result.tainted) return t("radar_at", { clock: fmtClock(result.frameTime) });
+  const ts = refreshedAt != null ? refreshedAt : result.frameTime;
+  let updated = t("updated", { ago: fmtTimeAgo(ts), clock: fmtClock(ts) });
+  if (autoRefresh) updated += " " + t("auto_hint", { n: autoRefreshMin });
+  return updated;
+}
+
+export default function FootBar({ result, refreshedAt, showNotifCta, onEnableNotif }: FootBarProps) {
   const { t, fmtTimeAgo, fmtClock } = useI18n();
   const { settings } = useStore();
 
-  let updated = "—";
-  if (result) {
-    if (result.tainted) {
-      updated = t("radar_at", { clock: fmtClock(result.frameTime) });
-    } else {
-      updated = t("updated", { ago: fmtTimeAgo(result.frameTime), clock: fmtClock(result.frameTime) });
-      if (settings.autoRefresh) updated += " " + t("auto_hint", { n: settings.autoRefreshMin });
-    }
-  }
+  const updated = buildUpdatedText(result, refreshedAt, settings.autoRefresh, settings.autoRefreshMin, {
+    t,
+    fmtTimeAgo,
+    fmtClock,
+  });
 
   return (
     <div className="footbar">
