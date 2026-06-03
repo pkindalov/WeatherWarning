@@ -145,7 +145,7 @@ export interface LegendStop {
 // deliberately alarming colours (red, then vivid magenta) so dangerous cells
 // stand out from ordinary rain.
 export const LEGEND: LegendStop[] = [
-  { dbz: 0, color: "#74c7ec", label: "Very light", key: "mist" }, //  0–20: very light / mist
+  { dbz: 0, color: "#74c7ec", label: "Light rain / mist", key: "mist" }, //  0–20: light rain / mist
   { dbz: 20, color: "#40b15f", label: "Rain / snow", key: "rain" }, // 20–40: light–moderate rain/snow
   { dbz: 40, color: "#f5a623", label: "Heavy rain", key: "downpour" }, // 40–50: heavy downpours
   { dbz: 50, color: "#e53935", label: "Storm · small hail", key: "hail_small" }, // 50–60: storms, small hail

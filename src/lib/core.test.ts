@@ -101,7 +101,7 @@ describe("colorToDbz (RainViewer Universal Blue lookup)", () => {
 describe("dBZ labels & colours", () => {
   it("labels by threshold band", () => {
     expect(dbzLabel(null)).toBe("No echo");
-    expect(dbzLabel(5)).toBe("Very light");
+    expect(dbzLabel(5)).toBe("Light rain / mist");
     expect(dbzLabel(25)).toBe("Rain / snow");
     expect(dbzLabel(45)).toBe("Heavy rain");
     expect(dbzLabel(55)).toBe("Storm · small hail");

@@ -379,8 +379,13 @@ export default function MapView({
                 key={s.key}
                 className="legend-seg"
                 style={{ background: s.color }}
-                onMouseEnter={() => setLegendTip(i)}
-                onMouseLeave={() => setLegendTip((c) => (c === i ? null : c))}
+                // Hover preview for mouse only. Touch fires a synthetic
+                // pointerenter + click together; ignoring the touch enter lets
+                // the click below toggle the tip on instead of cancelling it.
+                onPointerEnter={(e) => e.pointerType === "mouse" && setLegendTip(i)}
+                onPointerLeave={(e) =>
+                  e.pointerType === "mouse" && setLegendTip((c) => (c === i ? null : c))
+                }
                 onClick={() => setLegendTip((c) => (c === i ? null : i))}
               />
             ))}
@@ -454,11 +459,11 @@ export default function MapView({
           />
           {frames.length > 1 && (
             // "now" boundary: everything to its right is forecast (nowcast).
-            // Position is a computed %, passed as a CSS var like the existing
-            // map pins/picker — no static stylesheet value can express it.
+            // Passed as a 0–1 fraction so the CSS can offset by the slider
+            // thumb radius and line the marker up with the thumb at the ends.
             <span
               className="scrubber__now"
-              style={{ "--x": nowMarkerPercent(frames, baseTime) + "%" } as CSSProperties}
+              style={{ "--p": nowMarkerPercent(frames, baseTime) / 100 } as CSSProperties}
             />
           )}
         </div>
