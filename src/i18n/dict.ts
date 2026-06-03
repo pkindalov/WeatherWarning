@@ -65,6 +65,8 @@ export const DICT: Record<Lang, Record<string, string>> = {
     pill_past: "Минало",
     pill_forecast: "Прогноза",
     forecast_val: "+{n} мин · {clock}",
+    play_title: "Пусни радарната анимация",
+    scrub_aria: "Превърти радарните кадри",
 
     // buttons
     enable_alerts: "Включи известия",
@@ -186,6 +188,8 @@ export const DICT: Record<Lang, Record<string, string>> = {
     pill_past: "Past",
     pill_forecast: "Forecast",
     forecast_val: "+{n} min · {clock}",
+    play_title: "Play radar loop",
+    scrub_aria: "Scrub radar frames",
 
     enable_alerts: "Turn on alerts",
 

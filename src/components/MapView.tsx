@@ -4,12 +4,13 @@
    alert radius, and storm-cell marker. The play button / time pill
    step through the RainViewer past + nowcast frames.
    ============================================================ */
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { useI18n } from "../i18n/I18nContext";
 import { LEGEND, dbzColor } from "../lib/core";
 import { radarTileTemplate, samplePointDbz } from "../lib/radar";
+import { lastPastIndex, nowMarkerPercent } from "../lib/playback";
 import type { Level, NearestCell, RadarFrame, SavedLocation } from "../types";
 
 interface MapViewProps {
@@ -195,9 +196,7 @@ export default function MapView({
   /* ---- default to the most recent observed frame when frames load ---- */
   useEffect(() => {
     if (!frames.length) return;
-    let startIdx = 0;
-    for (let i = 0; i < frames.length; i++) if (frames[i].time <= baseTime) startIdx = i;
-    setFrameIdx(startIdx);
+    setFrameIdx(lastPastIndex(frames, baseTime));
     setPlaying(false);
   }, [frames, baseTime]);
 
@@ -328,24 +327,52 @@ export default function MapView({
         <span>{pillVal}</span>
       </div>
 
-      <button
-        className="play-btn"
-        title="Play radar loop"
-        aria-label="Play radar loop"
-        onClick={() => setPlaying((p) => !p)}
-        disabled={frames.length < 2}
-      >
-        {playing ? (
-          <svg viewBox="0 0 24 24" fill="currentColor">
-            <rect x="6" y="5" width="4" height="14" rx="1" />
-            <rect x="14" y="5" width="4" height="14" rx="1" />
-          </svg>
-        ) : (
-          <svg viewBox="0 0 24 24" fill="currentColor">
-            <path d="M8 5v14l11-7z" />
-          </svg>
-        )}
-      </button>
+      <div className="scrubber">
+        <button
+          className="scrubber__play"
+          title={t("play_title")}
+          aria-label={t("play_title")}
+          onClick={() => setPlaying((p) => !p)}
+          disabled={frames.length < 2}
+        >
+          {playing ? (
+            <svg viewBox="0 0 24 24" fill="currentColor">
+              <rect x="6" y="5" width="4" height="14" rx="1" />
+              <rect x="14" y="5" width="4" height="14" rx="1" />
+            </svg>
+          ) : (
+            <svg viewBox="0 0 24 24" fill="currentColor">
+              <path d="M8 5v14l11-7z" />
+            </svg>
+          )}
+        </button>
+
+        <div className="scrubber__track">
+          <input
+            className="scrubber__range"
+            type="range"
+            min={0}
+            max={Math.max(0, frames.length - 1)}
+            step={1}
+            value={frameIdx}
+            onChange={(e) => {
+              setPlaying(false);
+              setFrameIdx(Number(e.target.value));
+            }}
+            disabled={frames.length < 2}
+            aria-label={t("scrub_aria")}
+          />
+          {frames.length > 1 && (
+            // "now" boundary: everything to its right is forecast (nowcast).
+            // Position is a computed %, passed as a CSS var like the existing
+            // map pins/picker — no static stylesheet value can express it.
+            <span
+              className="scrubber__now"
+              style={{ "--x": nowMarkerPercent(frames, baseTime) + "%" } as CSSProperties}
+            />
+          )}
+        </div>
+      </div>
     </div>
   );
 }
