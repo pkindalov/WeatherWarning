@@ -365,7 +365,10 @@ export default function MapView({
               aria-label={t("legend_hide")}
               title={t("legend_hide")}
               onPointerDown={(e) => e.stopPropagation()}
-              onClick={() => setLegendOpen(false)}
+              onClick={() => {
+                setLegendTip(null); // don't reopen with a stale tooltip showing
+                setLegendOpen(false);
+              }}
             >
               ×
             </button>
