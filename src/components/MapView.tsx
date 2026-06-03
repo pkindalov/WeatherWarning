@@ -325,7 +325,9 @@ export default function MapView({
   };
   const onLegendDragEnd = (e: React.PointerEvent) => {
     setLegendDrag(false);
-    e.currentTarget.releasePointerCapture(e.pointerId);
+    // pointercancel already releases capture; calling release again throws.
+    if (e.currentTarget.hasPointerCapture(e.pointerId))
+      e.currentTarget.releasePointerCapture(e.pointerId);
   };
 
   return (
@@ -355,6 +357,7 @@ export default function MapView({
             onPointerDown={onLegendDragStart}
             onPointerMove={onLegendDragMove}
             onPointerUp={onLegendDragEnd}
+            onPointerCancel={onLegendDragEnd}
           >
             <span className="legend-title">{t("legend_title")}</span>
             <button
