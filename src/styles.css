@@ -212,9 +212,10 @@ body {
 
 /* ---------- radar timeline scrubber ---------- */
 .scrubber {
-  position: absolute; left: 10px; right: 10px; bottom: 10px; z-index: 500;
+  flex: none;
   display: flex; align-items: center; gap: 10px;
-  background: rgba(255,255,255,.92); backdrop-filter: blur(6px);
+  margin: 10px 16px 0;
+  background: var(--surface);
   border: 1px solid var(--line); border-radius: 999px;
   padding: 6px 14px 6px 6px; box-shadow: var(--shadow-soft);
 }

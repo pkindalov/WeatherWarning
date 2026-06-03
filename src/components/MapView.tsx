@@ -292,8 +292,9 @@ export default function MapView({
     "map-pick" + (pickBigHail ? " map-pick--hail" : pickHail ? " map-pick--storm" : "");
 
   return (
-    <div className="mapwrap">
-      <div id="map" ref={elRef} />
+    <>
+      <div className="mapwrap">
+        <div id="map" ref={elRef} />
 
       {pick && (
         <>
@@ -325,6 +326,7 @@ export default function MapView({
       <div className={"map-time" + (future ? " future" : "")}>
         <span className="pill">{pillLabel}</span>
         <span>{pillVal}</span>
+      </div>
       </div>
 
       <div className="scrubber">
@@ -373,6 +375,6 @@ export default function MapView({
           )}
         </div>
       </div>
-    </div>
+    </>
   );
 }
