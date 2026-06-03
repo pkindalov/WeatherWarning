@@ -103,15 +103,17 @@ describe("colorToDbz (radar colour classifier)", () => {
 describe("dBZ labels & colours", () => {
   it("labels by threshold band", () => {
     expect(dbzLabel(null)).toBe("No echo");
-    expect(dbzLabel(5)).toBe("Drizzle");
-    expect(dbzLabel(25)).toBe("Light");
-    expect(dbzLabel(50)).toBe("Storm core");
-    expect(dbzLabel(63)).toBe("Hail / extreme");
+    expect(dbzLabel(5)).toBe("Very light");
+    expect(dbzLabel(25)).toBe("Rain / snow");
+    expect(dbzLabel(45)).toBe("Heavy rain");
+    expect(dbzLabel(55)).toBe("Storm · small hail");
+    expect(dbzLabel(63)).toBe("Extreme · large hail");
   });
 
-  it("returns the neutral colour for no echo", () => {
+  it("uses alarming colours for hail bands", () => {
     expect(dbzColor(null)).toBe("#cfd8e0");
-    expect(dbzColor(50)).toBe("#e53935");
+    expect(dbzColor(55)).toBe("#e53935"); // small hail → red
+    expect(dbzColor(63)).toBe("#c026d3"); // large hail → magenta
   });
 });
 

@@ -112,14 +112,11 @@ export const DICT: Record<Lang, Record<string, string>> = {
     search_failed: "Търсенето е неуспешно.",
 
     // dBZ labels
-    lbl_drizzle: "Ръмеж",
-    lbl_light: "Слаб дъжд",
-    lbl_moderate: "Умерен",
-    lbl_heavy: "Силен",
-    lbl_intense: "Интензивен",
-    lbl_storm_core: "Буря",
-    lbl_severe: "Много силен",
-    lbl_hail: "Градушка",
+    lbl_mist: "Много слабо / мъгла",
+    lbl_rain: "Дъжд / сняг",
+    lbl_downpour: "Пороен дъжд",
+    lbl_hail_small: "Буря · дребна градушка",
+    lbl_hail_large: "Екстремно · едра градушка",
     lbl_none: "Няма ехо",
 
     // toasts
@@ -232,14 +229,11 @@ export const DICT: Record<Lang, Record<string, string>> = {
     no_matches: "No matches.",
     search_failed: "Search failed.",
 
-    lbl_drizzle: "Drizzle",
-    lbl_light: "Light",
-    lbl_moderate: "Moderate",
-    lbl_heavy: "Heavy",
-    lbl_intense: "Intense",
-    lbl_storm_core: "Storm core",
-    lbl_severe: "Severe",
-    lbl_hail: "Hail / extreme",
+    lbl_mist: "Very light",
+    lbl_rain: "Rain / snow",
+    lbl_downpour: "Heavy rain",
+    lbl_hail_small: "Storm · small hail",
+    lbl_hail_large: "Extreme · large hail",
     lbl_none: "No echo",
 
     t_added: "Added {name}",

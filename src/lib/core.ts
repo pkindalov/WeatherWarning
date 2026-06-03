@@ -132,15 +132,15 @@ export interface LegendStop {
   key: string;
 }
 
+// 5 bands following the standard dBZ interpretation. The two hail bands use
+// deliberately alarming colours (red, then vivid magenta) so dangerous cells
+// stand out from ordinary rain.
 export const LEGEND: LegendStop[] = [
-  { dbz: 10, color: "#8ad8e8", label: "Drizzle", key: "drizzle" },
-  { dbz: 20, color: "#4fb86b", label: "Light", key: "light" },
-  { dbz: 30, color: "#2e9e3f", label: "Moderate", key: "moderate" },
-  { dbz: 40, color: "#f2d335", label: "Heavy", key: "heavy" },
-  { dbz: 45, color: "#f0972b", label: "Intense", key: "intense" },
-  { dbz: 50, color: "#e53935", label: "Storm core", key: "storm_core" },
-  { dbz: 58, color: "#9c1f1f", label: "Severe", key: "severe" },
-  { dbz: 63, color: "#d24fd2", label: "Hail / extreme", key: "hail" },
+  { dbz: 0, color: "#74c7ec", label: "Very light", key: "mist" }, //  0–20: very light / mist
+  { dbz: 20, color: "#40b15f", label: "Rain / snow", key: "rain" }, // 20–40: light–moderate rain/snow
+  { dbz: 40, color: "#f5a623", label: "Heavy rain", key: "downpour" }, // 40–50: heavy downpours
+  { dbz: 50, color: "#e53935", label: "Storm · small hail", key: "hail_small" }, // 50–60: storms, small hail
+  { dbz: 60, color: "#c026d3", label: "Extreme · large hail", key: "hail_large" }, // 60+: large, damaging hail
 ];
 
 export function dbzLabel(dbz: number | null) {

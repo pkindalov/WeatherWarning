@@ -8,7 +8,7 @@ import { useEffect, useRef, useState } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { useI18n } from "../i18n/I18nContext";
-import { LEGEND } from "../lib/core";
+import { LEGEND, dbzColor } from "../lib/core";
 import { radarTileTemplate, samplePointDbz } from "../lib/radar";
 import type { Level, NearestCell, RadarFrame, SavedLocation } from "../types";
 
@@ -153,7 +153,9 @@ export default function MapView({
       cellRef.current = null;
     }
     if (!cell) return;
-    const color = LEVEL_COLOR[level];
+    // colour the cell marker by its own intensity so hail cells (red → magenta)
+    // jump out from ordinary rain, not just by the overall alert level
+    const color = dbzColor(cell.dbz);
     cellRef.current = L.marker([cell.lat, cell.lon], {
       icon: L.divIcon({
         className: "ww-cell",
@@ -168,7 +170,7 @@ export default function MapView({
       }),
       zIndexOffset: 900,
     }).addTo(map);
-  }, [ready, cell, level]);
+  }, [ready, cell]);
 
   /* ---- recenter / fit on the active location ---- */
   useEffect(() => {
@@ -274,6 +276,12 @@ export default function MapView({
     }
   }
 
+  // escalate the picker readout over hail-capable cells
+  const pickHail = pick?.dbz != null && pick.dbz >= 50; // storms + small hail and up
+  const pickBigHail = pick?.dbz != null && pick.dbz >= 60; // large, damaging hail
+  const pickClass =
+    "map-pick" + (pickBigHail ? " map-pick--hail" : pickHail ? " map-pick--storm" : "");
+
   return (
     <div className="mapwrap">
       <div id="map" ref={elRef} />
@@ -281,9 +289,9 @@ export default function MapView({
       {pick && (
         <>
           <div className="map-pick-dot" style={{ left: pick.x, top: pick.y }} />
-          <div className="map-pick" style={{ left: pick.x, top: pick.y }}>
+          <div className={pickClass} style={{ left: pick.x, top: pick.y }}>
             {pick.dbz != null
-              ? `${Math.round(pick.dbz)} dBZ · ${dbzLabel(pick.dbz)}`
+              ? `${pickHail ? "⚠ " : ""}${Math.round(pick.dbz)} dBZ · ${dbzLabel(pick.dbz)}`
               : t("d_no_echo")}
           </div>
         </>
@@ -297,10 +305,11 @@ export default function MapView({
           ))}
         </div>
         <div className="legend-scale">
-          <span>10</span>
-          <span>30</span>
+          <span>0</span>
+          <span>20</span>
+          <span>40</span>
           <span>50</span>
-          <span>65+</span>
+          <span>60+</span>
         </div>
       </div>
 
