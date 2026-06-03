@@ -173,11 +173,20 @@ body {
 .legend-head .legend-title { margin-bottom: 0; }
 .legend-btn { flex: none; border: none; background: transparent; color: var(--ink-3); cursor: pointer; font-size: 15px; line-height: 1; padding: 0 2px; }
 .legend-btn:hover { color: var(--ink); }
-.legend-bar { display: flex; height: 9px; border-radius: 4px; overflow: hidden; width: 132px; }
+.legend-bar { display: flex; height: 9px; border-radius: 4px; overflow: hidden; width: 100%; min-width: 132px; }
 .legend-bar i { flex: 1; }
 .legend-seg { cursor: pointer; }
 .legend-scale { display: flex; justify-content: space-between; font-family: var(--mono); font-size: 8.5px; color: var(--ink-3); margin-top: 3px; }
-.legend-tip { margin-top: 6px; font-family: var(--mono); font-size: 10px; color: var(--ink-2); white-space: nowrap; }
+/* Floated above the legend (out of flow) so showing it never resizes the box
+   and moves the colour bar — which would thrash mouseenter/leave. */
+.legend-tip {
+  position: absolute; left: 0; bottom: calc(100% + 6px);
+  max-width: 210px; padding: 5px 8px;
+  background: rgba(255,255,255,.96); backdrop-filter: blur(6px);
+  border: 1px solid var(--line); border-radius: 8px; box-shadow: var(--shadow-soft);
+  font-family: var(--mono); font-size: 10px; line-height: 1.35; color: var(--ink-2);
+  pointer-events: none;
+}
 .legend-show {
   position: absolute; left: 10px; bottom: 10px; z-index: 500;
   width: 34px; height: 34px; border-radius: 10px;
