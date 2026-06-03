@@ -92,13 +92,23 @@ export default function MapView({
 
     map.zoomControl.setPosition("topleft");
 
-    L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png", {
+    // Base map without text so the radar overlay can sit between the terrain
+    // and the place names.
+    L.tileLayer("https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png", {
       subdomains: "abcd",
       maxZoom: 19,
       attribution: "&copy; OpenStreetMap, &copy; CARTO · radar &copy; RainViewer",
     }).addTo(map);
 
     radarLayerRef.current = L.layerGroup().addTo(map);
+
+    // Place names painted on top of the radar so town/village labels stay
+    // readable instead of being washed out by the cloud overlay.
+    L.tileLayer("https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}{r}.png", {
+      subdomains: "abcd",
+      maxZoom: 19,
+      zIndex: 10,
+    }).addTo(map);
     mapRef.current = map;
     setReady(true);
 
