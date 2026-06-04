@@ -269,11 +269,68 @@ export default function MapView({
     map.on("mousemove", onMove);
     map.on("mouseout", onOut);
     map.on("click", read);
+
+    // Touch: show measurement while finger moves across the map (mirrors desktop hover)
+    const container = map.getContainer();
+    let lastTouch: { x: number; y: number; lat: number; lng: number } | null = null;
+    let touchRaf = 0;
+
+    const readTouch = () => {
+      if (!lastTouch) return;
+      const { x, y, lat, lng } = lastTouch;
+      const f = frameRef.current;
+      const h = hostRef.current;
+      if (!f || !h) {
+        setPick({ dbz: null, x, y });
+        return;
+      }
+      void samplePointDbz(h, f.path, lat, lng).then((dbz) => setPick({ dbz, x, y }));
+    };
+
+    const getTouchPos = (touch: Touch) => {
+      const rect = container.getBoundingClientRect();
+      const x = touch.clientX - rect.left;
+      const y = touch.clientY - rect.top;
+      const latlng = map.containerPointToLatLng(L.point(x, y));
+      return { x, y, lat: latlng.lat, lng: latlng.lng };
+    };
+
+    const onTouchStart = (e: TouchEvent) => {
+      if (e.touches.length !== 1) return;
+      lastTouch = getTouchPos(e.touches[0]);
+      readTouch();
+    };
+
+    const onTouchMove = (e: TouchEvent) => {
+      if (e.touches.length !== 1) return;
+      lastTouch = getTouchPos(e.touches[0]);
+      if (touchRaf) return;
+      touchRaf = requestAnimationFrame(() => {
+        touchRaf = 0;
+        readTouch();
+      });
+    };
+
+    const clearTouch = () => {
+      lastTouch = null;
+      setPick(null);
+    };
+
+    container.addEventListener("touchstart", onTouchStart, { passive: true });
+    container.addEventListener("touchmove", onTouchMove, { passive: true });
+    container.addEventListener("touchend", clearTouch);
+    container.addEventListener("touchcancel", clearTouch);
+
     return () => {
       map.off("mousemove", onMove);
       map.off("mouseout", onOut);
       map.off("click", read);
       if (raf) cancelAnimationFrame(raf);
+      container.removeEventListener("touchstart", onTouchStart);
+      container.removeEventListener("touchmove", onTouchMove);
+      container.removeEventListener("touchend", clearTouch);
+      container.removeEventListener("touchcancel", clearTouch);
+      if (touchRaf) cancelAnimationFrame(touchRaf);
     };
   }, [ready]);
 
