@@ -10,7 +10,7 @@ export default function AppBar({ refreshing, onRefresh, onSettings }: AppBarProp
       <div className="brand">
         <div className="brand-mark" />
         <div className="brand-name">
-          Wheather<span>Warning</span>
+          Sky<span>Watch</span>
         </div>
       </div>
       <button
