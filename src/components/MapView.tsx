@@ -399,7 +399,7 @@ export default function MapView({
             <span>0</span>
             <span>20</span>
             <span>35</span>
-            <span>45</span>
+            <span>50</span>
             <span>55+</span>
           </div>
           {legendTip != null && (

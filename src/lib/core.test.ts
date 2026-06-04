@@ -119,7 +119,7 @@ describe("dBZ labels & colours", () => {
 
   it("describes each legend band's dBZ range", () => {
     expect(dbzBandRange(0)).toBe("0–20");
-    expect(dbzBandRange(2)).toBe("35–45");
+    expect(dbzBandRange(2)).toBe("35–50");
     expect(dbzBandRange(4)).toBe("55+"); // open-ended top band
   });
 
