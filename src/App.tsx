@@ -190,7 +190,7 @@ export default function App() {
         refresh({ fit: true });
       },
       () => promptManual(),
-      { enableHighAccuracy: true, timeout: 9000, maximumAge: 60000 }
+      { enableHighAccuracy: false, timeout: 9000, maximumAge: 60000 }
     );
   }
 

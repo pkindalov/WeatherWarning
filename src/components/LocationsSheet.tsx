@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useI18n } from "../i18n/I18nContext";
 import { useStore } from "../store/StoreContext";
 import { reverseName } from "../lib/geo";
@@ -71,8 +71,13 @@ export default function LocationsSheet({ open, onClose, refresh, toast }: Locati
   const [addName, setAddName] = useState("");
   const [addSearch, setAddSearch] = useState("");
   const [geo, setGeo] = useState<GeoState>({ status: "idle" });
+  const [locDenied, setLocDenied] = useState(false);
   const pickedRef = useRef<{ lat: number; lon: number; label: string } | null>(null);
   const debounceRef = useRef<number | undefined>(undefined);
+
+  useEffect(() => {
+    if (open) setLocDenied(false);
+  }, [open]);
 
   function doGeoSearch(q: string) {
     if (!q || q.trim().length < 3) {
@@ -131,6 +136,7 @@ export default function LocationsSheet({ open, onClose, refresh, toast }: Locati
       toast(t("t_no_geo"));
       return;
     }
+    setLocDenied(false);
     toast(t("t_locating"));
     navigator.geolocation.getCurrentPosition(
       async (pos) => {
@@ -141,8 +147,14 @@ export default function LocationsSheet({ open, onClose, refresh, toast }: Locati
         refresh(true);
         onClose();
       },
-      () => toast(t("t_no_loc")),
-      { enableHighAccuracy: true, timeout: 9000 }
+      (error) => {
+        if (error.code === 1) {
+          setLocDenied(true);
+        } else {
+          toast(t("t_no_loc"));
+        }
+      },
+      { enableHighAccuracy: false, timeout: 9000, maximumAge: 60000 }
     );
   }
 
@@ -232,13 +244,24 @@ export default function LocationsSheet({ open, onClose, refresh, toast }: Locati
                 );
               })}
           </div>
-          <button className="btn primary" style={{ justifyContent: "center" }} onClick={addCurrentLocation}>
+          <button className="btn primary btn--full" onClick={addCurrentLocation}>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <circle cx="12" cy="12" r="3" />
               <path d="M12 2v3M12 19v3M2 12h3M19 12h3" />
             </svg>
             <span>{t("use_current")}</span>
           </button>
+          {locDenied && (
+            <div className="loc-denied">
+              <svg className="loc-denied__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10" />
+                <line x1="12" y1="8" x2="12" y2="12" />
+                <line x1="12" y1="16" x2="12.01" y2="16" />
+              </svg>
+              <p className="loc-denied__msg">{t("t_loc_denied")}</p>
+              <button className="btn loc-denied__btn" onClick={addCurrentLocation}>{t("t_try_again")}</button>
+            </div>
+          )}
         </div>
       </div>
     </div>
