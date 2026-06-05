@@ -186,9 +186,9 @@ describe("SettingsSheet – auto-refresh toggle", () => {
 // ── Auto-refresh interval slider ─────────────────────────────────────────────
 
 describe("SettingsSheet – auto-refresh interval slider", () => {
-  it("shows the default interval label (5 min)", () => {
+  it("shows the default interval label (20 min)", () => {
     renderSheet();
-    expect(screen.getByText("На всеки 5 мин")).toBeInTheDocument();
+    expect(screen.getByText("На всеки 20 мин")).toBeInTheDocument();
   });
 
   it("commits new interval to store on pointerUp", () => {

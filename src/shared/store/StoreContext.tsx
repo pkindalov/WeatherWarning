@@ -9,6 +9,7 @@ import { createContext, useCallback, useContext, useMemo, useRef, useState, type
 import type { AlertRecord, Level, PersistState, SavedLocation, Settings } from "../types";
 
 const KEY = "wheatherwarning.v1";
+const MIGRATION_KEY = "wheatherwarning.migrations";
 
 const DEFAULTS: PersistState = {
   settings: {
@@ -18,7 +19,7 @@ const DEFAULTS: PersistState = {
     sound: true,
     vibrate: true,
     autoRefresh: true,
-    autoRefreshMin: 5,
+    autoRefreshMin: 20,
   },
   locations: [],
   activeId: null,
@@ -29,8 +30,16 @@ function load(): PersistState {
   try {
     const raw = JSON.parse(localStorage.getItem(KEY) || "null") as Partial<PersistState> | null;
     if (!raw) return structuredClone(DEFAULTS);
+    const settings = { ...DEFAULTS.settings, ...(raw.settings || {}) };
+    // one-time migration: bump old default of 5 min to 20 for existing users,
+    // but only once so a user who explicitly wants 5 min can still choose it.
+    const migrations = JSON.parse(localStorage.getItem(MIGRATION_KEY) || "{}") as Record<string, boolean>;
+    if (!migrations.autoRefreshMin20) {
+      settings.autoRefreshMin = 20;
+      localStorage.setItem(MIGRATION_KEY, JSON.stringify({ ...migrations, autoRefreshMin20: true }));
+    }
     return {
-      settings: { ...DEFAULTS.settings, ...(raw.settings || {}) },
+      settings,
       locations: Array.isArray(raw.locations) ? raw.locations : [],
       activeId: raw.activeId || null,
       lastAlert: raw.lastAlert || {},

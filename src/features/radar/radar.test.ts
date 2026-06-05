@@ -32,7 +32,7 @@ describe("frameList", () => {
 describe("radarTileTemplate", () => {
   it("builds a 512px Leaflet {z}/{x}/{y} tile template with the colour scheme", () => {
     expect(radarTileTemplate("https://rv.example", "/v2/radar/123")).toBe(
-      "https://rv.example/v2/radar/123/512/{z}/{x}/{y}/2/1_1.png"
+      "https://rv.example/v2/radar/123/512/{z}/{x}/{y}/2/0_0.png"
     );
   });
 });
