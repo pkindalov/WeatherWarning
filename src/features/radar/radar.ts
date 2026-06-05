@@ -24,6 +24,11 @@ const SAMPLE_ZOOM = 7;
 // "Universal Blue" — the palette RainViewer actually renders for radar tiles,
 // and the one core.colorToDbz reverse-maps to recover real dBZ values.
 const COLOR_SCHEME = 2;
+// Minimum number of pixels above threshold required to treat a return as a real
+// storm cell. Single-pixel returns are frequently anomalous propagation (AP) or
+// ground clutter — they are invisible on the smoothed display tiles but still
+// show up in the unsmoothed sample tiles used by the warning engine.
+export const MIN_CELL_PIXELS = 4;
 const tileCache = new Map<string, Promise<HTMLCanvasElement | null>>();
 
 interface MapsData {
@@ -198,6 +203,7 @@ async function sampleFrame(
   // scan the disc for max dBZ + nearest cell over threshold
   let maxDbz: number | null = centerDbz;
   let nearest: NearestCell | null = null;
+  let cellPixels = 0;
   const step = 1;
   for (let px = minPx; px <= maxPx; px += step) {
     for (let py = minPy; py <= maxPy; py += step) {
@@ -209,6 +215,7 @@ async function sampleFrame(
       if (v == null) continue;
       if (maxDbz == null || v > maxDbz) maxDbz = v;
       if (v >= threshold) {
+        cellPixels++;
         const distKm = (distPx * mpp) / 1000;
         if (!nearest || distKm < nearest.distanceKm) {
           const ll = C.pixelToLonLat(px, py, z);
@@ -218,6 +225,8 @@ async function sampleFrame(
       }
     }
   }
+  // Suppress single-pixel AP artifacts: a real cell needs spatial extent.
+  if (cellPixels < MIN_CELL_PIXELS) nearest = null;
   return { centerDbz, maxDbz, nearest, tainted };
 }
 
