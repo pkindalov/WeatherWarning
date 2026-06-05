@@ -15,6 +15,7 @@ const makeResult = (over: Partial<AnalysisResult> = {}): AnalysisResult => ({
   level: "safe",
   trend: "steady",
   eta: null,
+  etaDbz: null,
   centerDbz: null,
   maxDbz: null,
   nearest: null,
