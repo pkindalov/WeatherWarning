@@ -1,4 +1,4 @@
-import type { Level } from "../types";
+import type { Level } from "../../shared/types";
 
 const ICONS: Record<Level, JSX.Element> = {
   safe: (

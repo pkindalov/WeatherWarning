@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from "react";
-import { useI18n } from "../i18n/I18nContext";
-import { useStore } from "../store/StoreContext";
-import { reverseName } from "../lib/geo";
-import type { LocationKind } from "../types";
+import { useI18n } from "../../shared/i18n/I18nContext";
+import { useStore } from "../../shared/store/StoreContext";
+import { reverseName } from "../../shared/lib/geo";
+import type { LocationKind } from "../../shared/types";
 
 interface LocationsSheetProps {
   open: boolean;

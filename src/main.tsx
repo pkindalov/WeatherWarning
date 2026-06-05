@@ -1,8 +1,8 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import App from "./App";
-import { I18nProvider } from "./i18n/I18nContext";
-import { StoreProvider } from "./store/StoreContext";
+import { I18nProvider } from "./shared/i18n/I18nContext";
+import { StoreProvider } from "./shared/store/StoreContext";
 import "@fontsource/manrope/500.css";
 import "@fontsource/manrope/600.css";
 import "@fontsource/manrope/700.css";

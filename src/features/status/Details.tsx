@@ -1,5 +1,5 @@
-import { useI18n } from "../i18n/I18nContext";
-import type { AnalysisResult } from "../types";
+import { useI18n } from "../../shared/i18n/I18nContext";
+import type { AnalysisResult } from "../../shared/types";
 
 interface DetailsProps {
   result: AnalysisResult | null;

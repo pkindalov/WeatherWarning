@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { buildUpdatedText } from "./FootBar";
-import type { AnalysisResult } from "../types";
+import type { AnalysisResult } from "../../shared/types";
 
 // Minimal stubs that echo their inputs, so assertions can see exactly which
 // timestamp/params the builder fed each helper.

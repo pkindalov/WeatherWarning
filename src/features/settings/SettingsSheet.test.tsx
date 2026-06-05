@@ -2,11 +2,11 @@ import { render, screen, fireEvent } from "@testing-library/react";
 import { type ReactNode } from "react";
 import { beforeEach, describe, it, expect, vi } from "vitest";
 import SettingsSheet from "./SettingsSheet";
-import { StoreProvider } from "../store/StoreContext";
-import { I18nProvider } from "../i18n/I18nContext";
-import * as N from "../lib/notify";
+import { StoreProvider } from "../../shared/store/StoreContext";
+import { I18nProvider } from "../../shared/i18n/I18nContext";
+import * as N from "../alerts/notify";
 
-vi.mock("../lib/notify", () => ({
+vi.mock("../alerts/notify", () => ({
   unlockAudio: vi.fn(),
   vibrate: vi.fn(),
 }));

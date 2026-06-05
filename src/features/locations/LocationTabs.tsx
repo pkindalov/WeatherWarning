@@ -1,5 +1,5 @@
-import { useI18n } from "../i18n/I18nContext";
-import { useStore } from "../store/StoreContext";
+import { useI18n } from "../../shared/i18n/I18nContext";
+import { useStore } from "../../shared/store/StoreContext";
 
 interface LocationTabsProps {
   onSelect: (id: string) => void;

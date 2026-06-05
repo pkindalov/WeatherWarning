@@ -2,7 +2,7 @@
    notify.ts — notifications, vibration, alarm sound, service worker
    Ported from the original vanilla `Notify` namespace.
    ============================================================ */
-import type { Level } from "../types";
+import type { Level } from "../../shared/types";
 
 let swReg: ServiceWorkerRegistration | null = null;
 let audioCtx: AudioContext | null = null;

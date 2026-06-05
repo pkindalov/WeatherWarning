@@ -1,6 +1,6 @@
-import { useI18n } from "../i18n/I18nContext";
-import { useStore } from "../store/StoreContext";
-import type { AnalysisResult } from "../types";
+import { useI18n } from "../../shared/i18n/I18nContext";
+import { useStore } from "../../shared/store/StoreContext";
+import type { AnalysisResult } from "../../shared/types";
 
 interface FootBarProps {
   result: AnalysisResult | null;

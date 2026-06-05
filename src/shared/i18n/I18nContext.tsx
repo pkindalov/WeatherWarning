@@ -5,7 +5,7 @@
    the original ui.js is no longer needed.
    ============================================================ */
 import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from "react";
-import { LEGEND } from "../lib/core";
+import { LEGEND } from "../../features/radar/core";
 import { COMPASS, DICT, type Lang } from "./dict";
 
 const LANG_KEY = "ww.lang";

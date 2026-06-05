@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { lastPastIndex, nowMarkerPercent } from "./playback";
-import type { RadarFrame } from "../types";
+import type { RadarFrame } from "../../shared/types";
 
 const frames = (times: number[]): RadarFrame[] => times.map((time) => ({ time, path: "/" + time }));
 

@@ -2,7 +2,7 @@
    playback.ts — pure helpers for the radar timeline scrubber.
    Kept free of React/Leaflet so the index math is unit-testable.
    ============================================================ */
-import type { RadarFrame } from "../types";
+import type { RadarFrame } from "../../shared/types";
 
 // Index of the most recent observed (past) frame: the last frame whose time is
 // at or before `baseTime`. Falls back to 0 when nothing qualifies (or no frames).

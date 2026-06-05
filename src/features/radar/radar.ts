@@ -14,7 +14,7 @@ import type {
   NearestCell,
   Settings,
   SavedLocation,
-} from "../types";
+} from "../../shared/types";
 
 const MAPS_URL = "https://api.rainviewer.com/public/weather-maps.json";
 // RainViewer's global radar tiles only exist up to zoom 7; zoom 8+ returns a

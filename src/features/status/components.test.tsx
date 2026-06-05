@@ -2,10 +2,10 @@ import { render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { describe, expect, it } from "vitest";
 import StatusBanner from "./StatusBanner";
-import Toast from "./Toast";
+import Toast from "../../shared/components/Toast";
 import Details from "./Details";
-import { I18nProvider } from "../i18n/I18nContext";
-import type { AnalysisResult } from "../types";
+import { I18nProvider } from "../../shared/i18n/I18nContext";
+import type { AnalysisResult } from "../../shared/types";
 
 describe("StatusBanner", () => {
   it("renders the title, subtitle and level class", () => {

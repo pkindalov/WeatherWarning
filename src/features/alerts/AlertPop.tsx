@@ -1,4 +1,4 @@
-import type { Level } from "../types";
+import type { Level } from "../../shared/types";
 
 export interface AlertPopState {
   show: boolean;

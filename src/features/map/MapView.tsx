@@ -7,11 +7,11 @@
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import { useI18n } from "../i18n/I18nContext";
-import { LEGEND, dbzColor, dbzBandRange } from "../lib/core";
-import { radarTileTemplate, samplePointDbz } from "../lib/radar";
-import { lastPastIndex, nowMarkerPercent } from "../lib/playback";
-import type { Level, NearestCell, RadarFrame, SavedLocation } from "../types";
+import { useI18n } from "../../shared/i18n/I18nContext";
+import { LEGEND, dbzColor, dbzBandRange } from "../radar/core";
+import { radarTileTemplate, samplePointDbz } from "../radar/radar";
+import { lastPastIndex, nowMarkerPercent } from "./playback";
+import type { Level, NearestCell, RadarFrame, SavedLocation } from "../../shared/types";
 
 interface MapViewProps {
   active: SavedLocation | null;

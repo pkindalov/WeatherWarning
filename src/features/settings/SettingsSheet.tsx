@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
-import { useI18n } from "../i18n/I18nContext";
-import { useStore } from "../store/StoreContext";
-import * as N from "../lib/notify";
-import type { Lang } from "../i18n/dict";
+import { useI18n } from "../../shared/i18n/I18nContext";
+import { useStore } from "../../shared/store/StoreContext";
+import * as N from "../alerts/notify";
+import type { Lang } from "../../shared/i18n/dict";
 
 interface SettingsSheetProps {
   open: boolean;

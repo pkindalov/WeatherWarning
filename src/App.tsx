@@ -5,23 +5,23 @@
    original applyStatic/applyView/view-remembering machinery is gone.
    ============================================================ */
 import { useEffect, useRef, useState } from "react";
-import { useI18n } from "./i18n/I18nContext";
-import { useStore } from "./store/StoreContext";
-import * as R from "./lib/radar";
-import * as N from "./lib/notify";
-import { reverseName } from "./lib/geo";
-import type { AnalysisResult, Level, NearestCell, RadarFrame, SavedLocation } from "./types";
+import { useI18n } from "./shared/i18n/I18nContext";
+import { useStore } from "./shared/store/StoreContext";
+import * as R from "./features/radar/radar";
+import * as N from "./features/alerts/notify";
+import { reverseName } from "./shared/lib/geo";
+import type { AnalysisResult, Level, NearestCell, RadarFrame, SavedLocation } from "./shared/types";
 
-import AppBar from "./components/AppBar";
-import LocationTabs from "./components/LocationTabs";
-import StatusBanner from "./components/StatusBanner";
-import MapView from "./components/MapView";
-import Details from "./components/Details";
-import FootBar from "./components/FootBar";
-import AlertPop, { type AlertPopState } from "./components/AlertPop";
-import Toast from "./components/Toast";
-import SettingsSheet from "./components/SettingsSheet";
-import LocationsSheet from "./components/LocationsSheet";
+import AppBar from "./shared/components/AppBar";
+import LocationTabs from "./features/locations/LocationTabs";
+import StatusBanner from "./features/status/StatusBanner";
+import MapView from "./features/map/MapView";
+import Details from "./features/status/Details";
+import FootBar from "./features/status/FootBar";
+import AlertPop, { type AlertPopState } from "./features/alerts/AlertPop";
+import Toast from "./shared/components/Toast";
+import SettingsSheet from "./features/settings/SettingsSheet";
+import LocationsSheet from "./features/locations/LocationsSheet";
 
 // The subset of a result that statusText / fireAlert read — lets the
 // "Test alert" button pass a synthetic result without the heavy fields.
