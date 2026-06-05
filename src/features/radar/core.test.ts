@@ -9,6 +9,7 @@ import {
   fmtClock,
   fmtKm,
   fmtTimeAgo,
+  hailChance,
   haversineKm,
   LEGEND,
   lonLatToPixel,
@@ -142,6 +143,31 @@ describe("dBZ labels & colours", () => {
       const next = LEGEND[i + 1];
       if (next) expect(recovered!).toBeLessThan(next.dbz);
     });
+  });
+});
+
+describe("hailChance", () => {
+  it("returns null below 50 dBZ", () => {
+    expect(hailChance(0)).toBeNull();
+    expect(hailChance(49)).toBeNull();
+  });
+
+  it("returns correct rounded percentages at key thresholds", () => {
+    expect(hailChance(50)).toBe(20);
+    expect(hailChance(55)).toBe(40);
+    expect(hailChance(60)).toBe(60);
+    expect(hailChance(65)).toBe(80);
+  });
+
+  it("rounds to nearest 5%", () => {
+    expect(hailChance(52)).toBe(30); // raw 28 → rounds to 30
+    expect(hailChance(57)).toBe(50); // raw 48 → rounds to 50
+    expect(hailChance(62)).toBe(70); // raw 68 → rounds to 70
+  });
+
+  it("caps at 90%", () => {
+    expect(hailChance(70)).toBe(90);
+    expect(hailChance(99)).toBe(90);
   });
 });
 

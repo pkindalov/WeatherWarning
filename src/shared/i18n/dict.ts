@@ -21,12 +21,13 @@ export const DICT: Record<Lang, Record<string, string>> = {
 
     // status: results
     danger_title: "Потърсете укритие",
-    danger_sub: "Бурно ядро точно над {name} — {dbz} dBZ{tail}",
+    danger_sub: "Бурно ядро точно над {name} — {dbz} dBZ{tail}{hail}",
     warn_eta_title: "Приближаваща буря",
     warn_eta_sub: "Опасна клетка може да достигне {name} след около {eta} мин.",
     warn_title: "Внимание",
     warn_title_closing: "Внимание — приближава",
-    warn_sub: "{label} клетка на {dist} {dir}{trend} от {name}.",
+    warn_sub: "{label} клетка на {dist} {dir}{trend} от {name}.{hail}",
+    hail_hint: " Вероятност за градушка ~{pct}%.",
     safe_title: "Чисто е",
     safe_sub: "Няма опасни клетки в радиус от {radius} км около {name}.",
 
@@ -151,12 +152,13 @@ export const DICT: Record<Lang, Record<string, string>> = {
     st_loaded_sub: "Live detection isn't available in this browser, but the map is current.",
 
     danger_title: "Take cover now",
-    danger_sub: "Storm core overhead at {name} — {dbz} dBZ{tail}",
+    danger_sub: "Storm core overhead at {name} — {dbz} dBZ{tail}{hail}",
     warn_eta_title: "Storm approaching",
     warn_eta_sub: "A dangerous cell could reach {name} in about {eta} min.",
     warn_title: "Heads up",
     warn_title_closing: "Heads up — closing in",
-    warn_sub: "{label} cell {dist} {dir}{trend} of {name}.",
+    warn_sub: "{label} cell {dist} {dir}{trend} of {name}.{hail}",
+    hail_hint: " Hail probability ~{pct}%.",
     safe_title: "All clear",
     safe_sub: "No dangerous cells within {radius} km of {name}.",
 

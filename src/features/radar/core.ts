@@ -155,6 +155,18 @@ export const LEGEND: LegendStop[] = [
   { dbz: 60, color: "#ff77ff", label: "Екстремно / Едра градушка", key: "hail_large" }, // 60+: magenta (UB 60)
 ];
 
+const HAIL_DBZ_ONSET = 50;
+const HAIL_DBZ_REF_LOW = 45;
+const HAIL_DBZ_REF_HIGH = 70;
+const HAIL_PCT_CAP = 90;
+const HAIL_PCT_ROUND = 5;
+
+export function hailChance(dbz: number): number | null {
+  if (dbz < HAIL_DBZ_ONSET) return null;
+  const raw = ((dbz - HAIL_DBZ_REF_LOW) / (HAIL_DBZ_REF_HIGH - HAIL_DBZ_REF_LOW)) * 100;
+  return Math.min(Math.round(raw / HAIL_PCT_ROUND) * HAIL_PCT_ROUND, HAIL_PCT_CAP);
+}
+
 export function dbzLabel(dbz: number | null) {
   if (dbz == null) return "No echo";
   let out = LEGEND[0].label;

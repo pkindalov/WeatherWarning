@@ -9,6 +9,7 @@ import { useI18n } from "./shared/i18n/I18nContext";
 import { useStore } from "./shared/store/StoreContext";
 import * as R from "./features/radar/radar";
 import * as N from "./features/alerts/notify";
+import { hailChance } from "./features/radar/core";
 import { reverseName } from "./shared/lib/geo";
 import type { AnalysisResult, Level, NearestCell, RadarFrame, SavedLocation } from "./shared/types";
 
@@ -81,12 +82,15 @@ export default function App() {
   function statusText(loc: SavedLocation, res: ResultLike): { title: string; sub: string } {
     const name = loc.name;
     if (res.level === "danger") {
+      const dangerDbz = Math.round(res.centerDbz ?? 0);
+      const dangerHailPct = hailChance(dangerDbz);
       return {
         title: t("danger_title"),
         sub: t("danger_sub", {
           name,
-          dbz: Math.round(res.centerDbz ?? 0),
+          dbz: dangerDbz,
           tail: res.trend === "receding" ? t("tail_easing") : t("tail_dot"),
+          hail: dangerHailPct != null ? t("hail_hint", { pct: dangerHailPct }) : "",
         }),
       };
     }
@@ -98,6 +102,8 @@ export default function App() {
       const dir = n ? compass(n.bearing) : "";
       const trendBit =
         res.trend === "approaching" ? t("trend_in") : res.trend === "receding" ? t("trend_out") : "";
+      const warnDbz = n ? n.dbz : (res.maxDbz ?? 0);
+      const warnHailPct = hailChance(warnDbz);
       return {
         title: res.trend === "approaching" ? t("warn_title_closing") : t("warn_title"),
         sub: t("warn_sub", {
@@ -106,6 +112,7 @@ export default function App() {
           dir,
           trend: trendBit,
           name,
+          hail: warnHailPct != null ? t("hail_hint", { pct: warnHailPct }) : "",
         }),
       };
     }
