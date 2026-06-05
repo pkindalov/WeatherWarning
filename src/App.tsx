@@ -9,7 +9,7 @@ import { useI18n } from "./shared/i18n/I18nContext";
 import { useStore } from "./shared/store/StoreContext";
 import * as R from "./features/radar/radar";
 import * as N from "./features/alerts/notify";
-import { hailChance } from "./features/radar/core";
+import { buildStatusText, type ResultLike } from "./features/status/statusText";
 import { reverseName } from "./shared/lib/geo";
 import type { AnalysisResult, Level, NearestCell, RadarFrame, SavedLocation } from "./shared/types";
 
@@ -23,13 +23,6 @@ import AlertPop, { type AlertPopState } from "./features/alerts/AlertPop";
 import Toast from "./shared/components/Toast";
 import SettingsSheet from "./features/settings/SettingsSheet";
 import LocationsSheet from "./features/locations/LocationsSheet";
-
-// The subset of a result that statusText / fireAlert read — lets the
-// "Test alert" button pass a synthetic result without the heavy fields.
-type ResultLike = Pick<
-  AnalysisResult,
-  "level" | "centerDbz" | "trend" | "nearest" | "maxDbz" | "eta" | "etaDbz" | "radiusKm"
->;
 
 type AppStatus =
   | { kind: "system"; level: Level; titleKey: string; subKey: string; params?: Record<string, string | number> }
@@ -80,50 +73,7 @@ export default function App() {
   }
 
   function statusText(loc: SavedLocation, res: ResultLike): { title: string; sub: string } {
-    const name = loc.name;
-    if (res.level === "danger") {
-      const dangerDbz = Math.round(res.centerDbz ?? 0);
-      const dangerHailPct = hailChance(dangerDbz);
-      return {
-        title: t("danger_title"),
-        sub: t("danger_sub", {
-          name,
-          dbz: dangerDbz,
-          tail: res.trend === "receding" ? t("tail_easing") : t("tail_dot"),
-          hail: dangerHailPct != null ? t("hail_hint", { pct: dangerHailPct }) : "",
-        }),
-      };
-    }
-    if (res.level === "warning") {
-      if (res.eta && !res.nearest) {
-        const isHailEta = res.etaDbz != null && res.etaDbz >= 50;
-        return {
-          title: isHailEta ? t("hail_approaching_title") : t("warn_eta_title"),
-          sub: isHailEta
-            ? t("hail_eta_sub", { name, eta: res.eta })
-            : t("warn_eta_sub", { name, eta: res.eta }),
-        };
-      }
-      const n = res.nearest;
-      const dir = n ? compass(n.bearing) : "";
-      const trendBit =
-        res.trend === "approaching" ? t("trend_in") : res.trend === "receding" ? t("trend_out") : "";
-      const warnDbz = n ? n.dbz : (res.maxDbz ?? 0);
-      const warnHailPct = hailChance(warnDbz);
-      const isHailApproaching = res.trend === "approaching" && warnDbz >= 50;
-      return {
-        title: isHailApproaching ? t("hail_approaching_title") : res.trend === "approaching" ? t("warn_title_closing") : t("warn_title"),
-        sub: t("warn_sub", {
-          label: dbzLabel(n ? n.dbz : res.maxDbz),
-          dist: n ? fmtKm(n.distanceKm) : "",
-          dir,
-          trend: trendBit,
-          name,
-          hail: warnHailPct != null ? t("hail_hint", { pct: warnHailPct }) : "",
-        }),
-      };
-    }
-    return { title: t("safe_title"), sub: t("safe_sub", { radius: res.radiusKm, name }) };
+    return buildStatusText(loc, res, { t, compass, dbzLabel, fmtKm });
   }
 
   /* ---- alerting ---- */
