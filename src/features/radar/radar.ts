@@ -64,12 +64,14 @@ function sampleTileUrl(host: string, path: string, z: number, x: number, y: numb
   return `${host}${path}/256/${z}/${x}/${y}/${COLOR_SCHEME}/0_0.png`;
 }
 
-// Display tiles for the Leaflet overlay: a {z}/{x}/{y} template. Smoothing on
-// (1_1) and the 512px "retina" render, displayed in a 256px tile box, so the
-// z7-capped radar has ~2x the pixel density and looks far less blocky when the
-// map is zoomed in past RainViewer's native resolution. Sampling stays 256/0_0.
+// Display tiles for the Leaflet overlay: a {z}/{x}/{y} template.
+// Using 0_0 (no smoothing) so the displayed colours exactly match the UB palette
+// that colorToDbz was calibrated against. Smoothed (1_1) tiles spatially blend
+// small intense cells with surrounding rain, making a 55 dBZ cell appear cyan
+// instead of red — the 512px retina size provides enough pixel density to keep
+// it readable without needing smoothing. Sampling stays 256/0_0.
 export function radarTileTemplate(host: string, path: string) {
-  return `${host}${path}/512/{z}/{x}/{y}/${COLOR_SCHEME}/1_1.png`;
+  return `${host}${path}/512/{z}/{x}/{y}/${COLOR_SCHEME}/0_0.png`;
 }
 
 /* ---------- load one tile into a canvas (CORS) ---------- */
