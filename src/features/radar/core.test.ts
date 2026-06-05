@@ -105,22 +105,24 @@ describe("dBZ labels & colours", () => {
     expect(dbzLabel(5)).toBe("Light rain / mist");
     expect(dbzLabel(25)).toBe("Rain / snow");
     expect(dbzLabel(40)).toBe("Heavy rain");
-    expect(dbzLabel(50)).toBe("Storm · small hail");
-    expect(dbzLabel(55)).toBe("Extreme · large hail"); // magenta band starts at 55
-    expect(dbzLabel(63)).toBe("Extreme · large hail");
+    expect(dbzLabel(50)).toBe("Буря / Дребна градушка");
+    expect(dbzLabel(55)).toBe("Буря / Дребна градушка");
+    expect(dbzLabel(60)).toBe("Екстремно / Едра градушка");
+    expect(dbzLabel(63)).toBe("Екстремно / Едра градушка");
   });
 
   it("colours hail bands to match RainViewer's red→magenta transition", () => {
     expect(dbzColor(null)).toBe("#cfd8e0");
     expect(dbzColor(50)).toBe("#c10000"); // small hail → red (UB 50)
-    expect(dbzColor(55)).toBe("#ff77ff"); // large hail → magenta (UB 60)
+    expect(dbzColor(55)).toBe("#c10000"); // still red below 60
+    expect(dbzColor(60)).toBe("#ff77ff"); // large hail → magenta (UB 60)
     expect(dbzColor(63)).toBe("#ff77ff");
   });
 
   it("describes each legend band's dBZ range", () => {
     expect(dbzBandRange(0)).toBe("0–20");
     expect(dbzBandRange(2)).toBe("35–50");
-    expect(dbzBandRange(4)).toBe("55+"); // open-ended top band
+    expect(dbzBandRange(4)).toBe("60+"); // open-ended top band
   });
 
   it("keeps every legend swatch on RainViewer's palette, inside its own band", () => {

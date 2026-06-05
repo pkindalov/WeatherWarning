@@ -44,11 +44,11 @@ describe("useI18n", () => {
     const { result } = setup();
     expect(result.current.fmtKm(3.2)).toBe("3.2 км");
     expect(result.current.compass(90)).toBe("И");
-    expect(result.current.dbzLabel(55)).toBe("Екстремно · едра градушка");
+    expect(result.current.dbzLabel(60)).toBe("Екстремно · едра градушка");
 
     act(() => result.current.setLang("en"));
     expect(result.current.fmtKm(3.2)).toBe("3.2 km");
     expect(result.current.compass(90)).toBe("E");
-    expect(result.current.dbzLabel(55)).toBe("Extreme · large hail");
+    expect(result.current.dbzLabel(60)).toBe("Extreme · large hail");
   });
 });
