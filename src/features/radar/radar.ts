@@ -84,7 +84,7 @@ function loadTile(url: string): Promise<HTMLCanvasElement | null> {
         const cv = document.createElement("canvas");
         cv.width = 256;
         cv.height = 256;
-        cv.getContext("2d")!.drawImage(img, 0, 0);
+        cv.getContext("2d", { willReadFrequently: true })!.drawImage(img, 0, 0);
         resolve(cv);
       } catch {
         resolve(null);
