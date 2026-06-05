@@ -40,6 +40,22 @@ describe("useI18n", () => {
     expect(localStorage.getItem("ww.lang")).toBe("en");
   });
 
+  it("translates hail approaching and ETA strings in both languages", () => {
+    const { result } = setup();
+    expect(result.current.t("hail_approaching_title")).toBe("Градушка приближава към района");
+    expect(result.current.t("hail_eta_sub", { name: "Sofia", eta: 8 })).toBe(
+      "Градушка може да достигне Sofia след ~8 мин.",
+    );
+    expect(result.current.t("forecast_disclaimer")).toContain("приблизителни");
+
+    act(() => result.current.setLang("en"));
+    expect(result.current.t("hail_approaching_title")).toBe("Hail approaching your area");
+    expect(result.current.t("hail_eta_sub", { name: "Sofia", eta: 8 })).toBe(
+      "Hail could reach Sofia in ~8 min.",
+    );
+    expect(result.current.t("forecast_disclaimer")).toContain("approximate");
+  });
+
   it("localises formatters and the dBZ label", () => {
     const { result } = setup();
     expect(result.current.fmtKm(3.2)).toBe("3.2 км");

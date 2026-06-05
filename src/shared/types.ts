@@ -57,6 +57,7 @@ export interface AnalysisResult {
   level: Level;
   trend: Trend;
   eta: number | null;
+  etaDbz: number | null;
   centerDbz: number | null;
   maxDbz: number | null;
   nearest: NearestCell | null;

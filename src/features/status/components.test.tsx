@@ -14,6 +14,19 @@ describe("StatusBanner", () => {
     expect(screen.getByText("Storm core")).toBeInTheDocument();
     expect(container.querySelector(".status")).toHaveClass("danger");
   });
+
+  it("renders disclaimer when provided", () => {
+    const { container } = render(
+      <StatusBanner level="warning" title="Heads up" sub="Cell nearby" disclaimer="Forecast approximate" />,
+    );
+    expect(screen.getByText("Forecast approximate")).toBeInTheDocument();
+    expect(container.querySelector(".status-disclaimer")).toBeInTheDocument();
+  });
+
+  it("does not render disclaimer element when omitted", () => {
+    const { container } = render(<StatusBanner level="warning" title="Heads up" sub="Cell nearby" />);
+    expect(container.querySelector(".status-disclaimer")).not.toBeInTheDocument();
+  });
 });
 
 describe("Toast", () => {
@@ -41,6 +54,7 @@ describe("Details", () => {
       level: "danger",
       trend: "approaching",
       eta: null,
+      etaDbz: null,
       centerDbz: 50,
       maxDbz: 55,
       nearest: { distanceKm: 3.2, bearing: 90, dbz: 52, lat: 1, lon: 1 },

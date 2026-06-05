@@ -28,7 +28,7 @@ import LocationsSheet from "./features/locations/LocationsSheet";
 // "Test alert" button pass a synthetic result without the heavy fields.
 type ResultLike = Pick<
   AnalysisResult,
-  "level" | "centerDbz" | "trend" | "nearest" | "maxDbz" | "eta" | "radiusKm"
+  "level" | "centerDbz" | "trend" | "nearest" | "maxDbz" | "eta" | "etaDbz" | "radiusKm"
 >;
 
 type AppStatus =
@@ -96,7 +96,13 @@ export default function App() {
     }
     if (res.level === "warning") {
       if (res.eta && !res.nearest) {
-        return { title: t("warn_eta_title"), sub: t("warn_eta_sub", { name, eta: res.eta }) };
+        const isHailEta = res.etaDbz != null && res.etaDbz >= 50;
+        return {
+          title: isHailEta ? t("hail_approaching_title") : t("warn_eta_title"),
+          sub: isHailEta
+            ? t("hail_eta_sub", { name, eta: res.eta })
+            : t("warn_eta_sub", { name, eta: res.eta }),
+        };
       }
       const n = res.nearest;
       const dir = n ? compass(n.bearing) : "";
@@ -104,8 +110,9 @@ export default function App() {
         res.trend === "approaching" ? t("trend_in") : res.trend === "receding" ? t("trend_out") : "";
       const warnDbz = n ? n.dbz : (res.maxDbz ?? 0);
       const warnHailPct = hailChance(warnDbz);
+      const isHailApproaching = res.trend === "approaching" && warnDbz >= 50;
       return {
-        title: res.trend === "approaching" ? t("warn_title_closing") : t("warn_title"),
+        title: isHailApproaching ? t("hail_approaching_title") : res.trend === "approaching" ? t("warn_title_closing") : t("warn_title"),
         sub: t("warn_sub", {
           label: dbzLabel(n ? n.dbz : res.maxDbz),
           dist: n ? fmtKm(n.distanceKm) : "",
@@ -301,6 +308,7 @@ export default function App() {
       maxDbz: 58,
       nearest: { distanceKm: 0, bearing: 0, dbz: 58, lat: loc.lat, lon: loc.lon },
       eta: null,
+      etaDbz: null,
     });
   }
 
@@ -343,7 +351,12 @@ export default function App() {
         onAdd={() => setSheet("locations")}
       />
 
-      <StatusBanner level={display.level} title={display.title} sub={display.sub} />
+      <StatusBanner
+        level={display.level}
+        title={display.title}
+        sub={display.sub}
+        disclaimer={display.level !== "safe" ? t("forecast_disclaimer") : undefined}
+      />
 
       <MapView
         active={active}

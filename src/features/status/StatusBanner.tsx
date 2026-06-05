@@ -45,15 +45,17 @@ interface StatusBannerProps {
   level: Level;
   title: string;
   sub: string;
+  disclaimer?: string;
 }
 
-export default function StatusBanner({ level, title, sub }: StatusBannerProps) {
+export default function StatusBanner({ level, title, sub, disclaimer }: StatusBannerProps) {
   return (
     <section className={"status " + level}>
       <div className="status-emoji">{ICONS[level]}</div>
       <div className="status-main">
         <div className="status-title">{title}</div>
         <div className="status-sub">{sub}</div>
+        {disclaimer && <div className="status-disclaimer">{disclaimer}</div>}
       </div>
     </section>
   );

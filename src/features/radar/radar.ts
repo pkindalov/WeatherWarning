@@ -270,8 +270,10 @@ export async function analyze(loc: SavedLocation, settings: Settings): Promise<A
     else trend = "steady";
   }
   // ETA: if currently safe but a cell enters the radius in nowcast
+  let etaDbz: number | null = null;
   if (level === "safe" && firstHitFrame) {
     eta = Math.max(1, Math.round((firstHitFrame.time - currentFrame.time) / 60));
+    etaDbz = firstHitFrame.nearest?.dbz ?? firstHitFrame.centerDbz ?? firstHitFrame.maxDbz ?? null;
     level = "warning"; // pre-warn
   }
 
@@ -279,6 +281,7 @@ export async function analyze(loc: SavedLocation, settings: Settings): Promise<A
     level,
     trend,
     eta,
+    etaDbz,
     centerDbz: cur.centerDbz,
     maxDbz: cur.maxDbz,
     nearest: cur.nearest,

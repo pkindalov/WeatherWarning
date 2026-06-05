@@ -141,6 +141,7 @@ body {
 .status-main { min-width: 0; }
 .status-title { font-size: 18px; font-weight: 800; letter-spacing: -.02em; line-height: 1.15; }
 .status-sub { font-size: 13px; color: var(--ink-2); margin-top: 3px; font-weight: 500; text-wrap: pretty; }
+.status-disclaimer { font-size: 11px; color: var(--ink-3); margin-top: 5px; font-style: italic; }
 
 @keyframes pulse { 0%,100% { box-shadow: 0 0 0 0 rgba(229,57,53,.5); } 50% { box-shadow: 0 0 0 7px rgba(229,57,53,0); } }
 
