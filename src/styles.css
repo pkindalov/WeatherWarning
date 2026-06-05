@@ -32,7 +32,7 @@
 }
 
 * { box-sizing: border-box; }
-html, body { height: 100%; margin: 0; }
+html, body { height: 100%; margin: 0; overflow-x: hidden; }
 body {
   font-family: var(--font);
   color: var(--ink);
@@ -287,17 +287,19 @@ body {
 .stat {
   background: var(--surface); border: 1px solid var(--line);
   border-radius: var(--r-md); padding: 11px 12px; box-shadow: var(--shadow-soft);
+  min-width: 0; overflow: hidden;
 }
 .stat-k { font-size: 10px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--ink-3); }
 .stat-v { font-family: var(--mono); font-size: 19px; font-weight: 500; margin-top: 4px; letter-spacing: -.01em; line-height: 1; }
+.stat-v--small { font-size: 15px; }
 .stat-v small { font-size: 11px; color: var(--ink-3); }
-.stat-x { font-size: 11px; color: var(--ink-2); margin-top: 3px; font-weight: 600; }
+.stat-x { font-size: 11px; color: var(--ink-2); margin-top: 3px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .stat .trend-up { color: var(--danger); }
 .stat .trend-down { color: var(--safe); }
 
 /* ---------- bottom bar ---------- */
 .footbar { flex: none; display: flex; align-items: center; gap: 10px; padding: 0 16px 16px; }
-.updated { font-size: 11.5px; color: var(--ink-3); font-weight: 600; margin-right: auto; }
+.updated { font-size: 11.5px; color: var(--ink-3); font-weight: 600; margin-right: auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .updated b { color: var(--ink-2); }
 .btn {
   border: 1px solid var(--line); background: var(--surface); color: var(--ink);

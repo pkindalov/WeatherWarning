@@ -62,7 +62,7 @@ function Stat({ k, v, x, small }: { k: string; v: string; x: string; small?: boo
   return (
     <div className="stat">
       <div className="stat-k">{k}</div>
-      <div className="stat-v" style={small ? { fontSize: 15 } : undefined} dangerouslySetInnerHTML={{ __html: v }} />
+      <div className={"stat-v" + (small ? " stat-v--small" : "")} dangerouslySetInnerHTML={{ __html: v }} />
       <div className="stat-x" dangerouslySetInnerHTML={{ __html: x }} />
     </div>
   );
