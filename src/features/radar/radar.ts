@@ -235,7 +235,7 @@ export async function analyze(loc: SavedLocation, settings: Settings): Promise<A
   const data = await loadMaps();
   const host = data.host;
   const frames = frameList(data);
-  if (!frames.all.length) throw new Error("no radar frames");
+  if (!frames.past.length) throw new Error("no radar frames");
 
   const threshold = settings.threshold;
   const radiusKm = settings.radiusKm;
@@ -260,7 +260,7 @@ export async function analyze(loc: SavedLocation, settings: Settings): Promise<A
   let trend: AnalysisResult["trend"] = "steady";
   let eta: number | null = null;
   const curDist = cur.nearest ? cur.nearest.distanceKm : Infinity;
-  let futureBest = curDist;
+  let futureBest = Infinity; // minimum distance the cell will reach across all nowcast frames
   let firstHitFrame: FutureFrame | null = null;
   for (const f of future) {
     const d =

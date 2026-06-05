@@ -108,6 +108,46 @@ function buildPixelData(hotCount: number): Uint8ClampedArray {
 
 /**
  * Stub Image and document.createElement('canvas') so that loadTile() resolves
+ * with hot pixel data for tiles whose URL contains any of hotPathSubstrings,
+ * and transparent data for all others.
+ */
+function stubDomTilesForPaths(pixelData: Uint8ClampedArray, hotPathSubstrings: string[]): void {
+  const urlQueue: string[] = [];
+
+  vi.stubGlobal(
+    "Image",
+    class MockImage {
+      onload: (() => void) | null = null;
+      onerror: (() => void) | null = null;
+      crossOrigin = "";
+      set src(url: string) {
+        urlQueue.push(url);
+        queueMicrotask(() => this.onload?.());
+      }
+    },
+  );
+
+  const origCreateElement = document.createElement.bind(document);
+  vi.spyOn(document, "createElement").mockImplementation(
+    (tag: string, options?: ElementCreationOptions) => {
+      if (tag !== "canvas") return origCreateElement(tag, options);
+      const url = urlQueue.shift() ?? "";
+      const isHot = hotPathSubstrings.some((p) => url.includes(p));
+      const data = isHot ? pixelData : new Uint8ClampedArray(256 * 256 * 4);
+      return {
+        width: 0,
+        height: 0,
+        getContext: () => ({
+          drawImage: () => {},
+          getImageData: () => ({ data }),
+        }),
+      } as unknown as HTMLCanvasElement;
+    },
+  );
+}
+
+/**
+ * Stub Image and document.createElement('canvas') so that loadTile() resolves
  * with pixel data for the hot tile URL and transparent data for all others.
  * Returns are ordered via a FIFO queue: Image.src sets push the URL, and
  * createElement('canvas') shifts the next URL to select the right buffer.
@@ -228,5 +268,45 @@ describe("cluster filtering (MIN_CELL_PIXELS)", () => {
     expect(res.nearest!.bearing).toBeLessThan(120);
     expect(res.nearest!.distanceKm).toBeGreaterThan(0);
     expect(res.nearest!.distanceKm).toBeLessThan(CLUSTER_SETTINGS.radiusKm);
+  });
+
+  it("reports trend=receding when a cell is present now but absent from all nowcast frames", async () => {
+    const CURRENT_PATH = "/past_receding";
+    const FUTURE_PATH = "/nowcast_receding";
+
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          host: HOST,
+          radar: {
+            past: [{ time: 1000, path: CURRENT_PATH }],
+            nowcast: [{ time: 1600, path: FUTURE_PATH }],
+          },
+        }),
+      }),
+    );
+
+    // Serve hot pixels only for the current (past) frame; future frame is all-transparent.
+    stubDomTilesForPaths(buildPixelData(MIN_CELL_PIXELS), [CURRENT_PATH]);
+
+    const res = await analyze(CLUSTER_LOC, CLUSTER_SETTINGS);
+    expect(res.nearest).not.toBeNull();
+    expect(res.trend).toBe("receding");
+  });
+
+  it("throws when past frames are empty even if nowcast frames are present", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          host: HOST,
+          radar: { past: [], nowcast: [{ time: 2000, path: "/nowcast_only" }] },
+        }),
+      }),
+    );
+    await expect(analyze(CLUSTER_LOC, CLUSTER_SETTINGS)).rejects.toThrow("no radar frames");
   });
 });
