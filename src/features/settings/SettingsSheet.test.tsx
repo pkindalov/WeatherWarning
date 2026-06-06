@@ -25,11 +25,13 @@ function renderSheet(
   overrides: {
     open?: boolean;
     notifPerm?: NotificationPermission | "unsupported";
+    onClose?: ReturnType<typeof vi.fn>;
     onRefresh?: ReturnType<typeof vi.fn>;
     onToggleNotify?: ReturnType<typeof vi.fn>;
     onTest?: ReturnType<typeof vi.fn>;
   } = {},
 ) {
+  const onClose = overrides.onClose ?? vi.fn();
   const onRefresh = overrides.onRefresh ?? vi.fn();
   const onToggleNotify = overrides.onToggleNotify ?? vi.fn();
   const onTest = overrides.onTest ?? vi.fn();
@@ -38,13 +40,14 @@ function renderSheet(
       <SettingsSheet
         open={overrides.open ?? true}
         notifPerm={overrides.notifPerm ?? "default"}
+        onClose={onClose}
         onRefresh={onRefresh}
         onToggleNotify={onToggleNotify}
         onTest={onTest}
       />
     </Wrapper>,
   );
-  return { ...result, onRefresh, onToggleNotify, onTest };
+  return { ...result, onClose, onRefresh, onToggleNotify, onTest };
 }
 
 function toggleInField(labelText: string): Element {
@@ -75,6 +78,12 @@ describe("SettingsSheet – visibility", () => {
   it("omits 'open' class when open=false", () => {
     const { container } = renderSheet({ open: false });
     expect(container.querySelector(".sheet")).not.toHaveClass("open");
+  });
+
+  it("clicking the close button calls onClose", () => {
+    const { onClose, container } = renderSheet({ open: true });
+    fireEvent.click(container.querySelector(".sheet-close")!);
+    expect(onClose).toHaveBeenCalledOnce();
   });
 });
 
