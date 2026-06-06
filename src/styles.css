@@ -161,6 +161,46 @@ body {
   }
 }
 
+/* ---------- desktop shell scaffolding (mobile-first defaults) ----------
+   On mobile .workspace/.sidebar are transparent (display:contents) so their
+   children flow as direct flex items of #app; `order` then restores the
+   original mobile sequence (tabs · status · map · scrubber · readouts · footer)
+   even though the JSX groups readouts/footer into the rail. The desktop layout
+   (≥900px, end of file) re-materialises the shell as a real grid. */
+.appbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.clock,
+.appbar-divider,
+.rail-label,
+.sheet-close {
+  display: none;
+}
+.workspace,
+.sidebar {
+  display: contents;
+}
+.loc-tabs {
+  order: 1;
+}
+.status {
+  order: 2;
+}
+.mapwrap {
+  order: 3;
+}
+.scrubber {
+  order: 4;
+}
+.details {
+  order: 5;
+}
+.footbar {
+  order: 6;
+}
+
 /* ---------- location tabs ---------- */
 .loc-tabs {
   display: flex;
@@ -1221,4 +1261,308 @@ input[type="range"]::-moz-range-thumb {
 
 .hidden {
   display: none !important;
+}
+
+/* ============================================================
+   Desktop layout (≥900px) — ported from
+   "WheatherWarning Desktop (standalone).html".
+   The phone frame becomes a full-bleed dashboard: a top bar, a 416px left
+   rail (locations · status · readouts · footer) and the radar as the hero on
+   the right with its timeline docked beneath. All component styling (status
+   colours, stat cards, legend, toggles, sliders, chips, sheet internals,
+   alert pop) is reused; only the shell is rebuilt. Below 900px the mobile
+   design above is untouched.
+   ============================================================ */
+@media (min-width: 900px) {
+  body {
+    display: block;
+    padding: 0;
+  }
+
+  /* ---- full-viewport shell ---- */
+  #app {
+    width: 100vw;
+    max-width: none;
+    height: 100vh;
+    max-height: none;
+    margin: 0;
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+    display: grid;
+    grid-template-rows: auto 1fr;
+    grid-template-columns: 100%;
+    overflow: hidden;
+  }
+
+  /* ---- top bar ---- */
+  .appbar {
+    padding: 0 26px;
+    height: 66px;
+    gap: 14px;
+    border-bottom: 1px solid var(--line);
+    background: var(--surface);
+    z-index: 20;
+  }
+  .brand {
+    gap: 11px;
+  }
+  .brand-mark {
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+  }
+  .brand-name {
+    font-size: 18px;
+  }
+  .clock {
+    display: block;
+    font-family: var(--mono);
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--ink-3);
+    letter-spacing: -0.01em;
+    white-space: nowrap;
+  }
+  .appbar-divider {
+    display: block;
+    width: 1px;
+    height: 30px;
+    background: var(--line);
+    margin: 0 4px 0 6px;
+    flex: none;
+  }
+
+  /* ---- workspace: rail + map (+ docked timeline) ---- */
+  .workspace {
+    display: grid;
+    grid-template-columns: 416px 1fr;
+    grid-template-rows: 1fr auto;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  /* ---- left rail ---- */
+  .sidebar {
+    grid-column: 1;
+    grid-row: 1 / span 2;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    padding: 22px;
+    background: var(--app-bg);
+    border-right: 1px solid var(--line);
+    overflow-y: auto;
+    min-height: 0;
+  }
+  .rail-label {
+    display: block;
+    order: 0;
+    font-size: 10.5px;
+    font-weight: 700;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    margin: 0 0 -8px 2px;
+  }
+
+  /* location chips wrap in the rail instead of scrolling */
+  .loc-tabs {
+    padding: 0;
+    overflow: visible;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .loc-tab {
+    font-size: 14px;
+    padding: 9px 14px;
+  }
+
+  /* status banner — hero card in the rail */
+  .status {
+    margin: 0;
+    padding: 20px;
+    border-radius: var(--r-lg);
+    align-items: flex-start;
+  }
+  .status-emoji {
+    width: 54px;
+    height: 54px;
+    border-radius: 16px;
+  }
+  .status-emoji svg {
+    width: 30px;
+    height: 30px;
+  }
+  .status-title {
+    font-size: 22px;
+  }
+  .status-sub {
+    font-size: 14px;
+    margin-top: 5px;
+  }
+
+  /* readouts — full-width stacked cards */
+  .details {
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 11px;
+  }
+  .stat {
+    padding: 16px 18px;
+    border-radius: var(--r-md);
+  }
+  .stat-k {
+    font-size: 11px;
+  }
+  .stat-v {
+    font-size: 28px;
+    margin-top: 7px;
+  }
+  .stat-v--small {
+    font-size: 17px;
+  }
+  .stat-v small {
+    font-size: 14px;
+  }
+  .stat-x {
+    font-size: 13px;
+    margin-top: 6px;
+  }
+
+  /* footer pinned to rail bottom */
+  .footbar {
+    margin-top: auto;
+    padding: 16px 0 0;
+    flex-wrap: wrap;
+    gap: 12px;
+    border-top: 1px solid var(--line);
+  }
+  .updated {
+    font-size: 12.5px;
+  }
+  .btn {
+    font-size: 13.5px;
+    padding: 11px 16px;
+  }
+
+  /* ---- map: full-bleed hero ---- */
+  .mapwrap {
+    grid-column: 2;
+    grid-row: 1;
+    margin: 0;
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+    min-height: 0;
+  }
+  .legend {
+    left: 16px;
+    bottom: 16px;
+    padding: 10px 13px;
+  }
+  .legend-bar {
+    width: 168px;
+    height: 11px;
+  }
+  .legend-title {
+    font-size: 10px;
+  }
+  .legend-scale {
+    font-size: 9.5px;
+  }
+  .map-time {
+    right: 16px;
+    top: 16px;
+    padding: 7px 14px;
+    font-size: 12.5px;
+  }
+
+  /* radar timeline docked under the map */
+  .scrubber {
+    grid-column: 2;
+    grid-row: 2;
+    margin: 14px 16px;
+  }
+
+  /* ---- settings / locations as docked side panels ---- */
+  .sheet {
+    left: auto;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    width: 452px;
+    max-width: 92vw;
+    max-height: none;
+    border-radius: 0;
+    border-top: none;
+    border-left: 1px solid var(--line);
+    box-shadow: -18px 0 56px -24px rgba(20, 30, 48, 0.34);
+    transform: translateX(102%);
+    transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+    padding: 26px 28px 30px;
+  }
+  .sheet.open {
+    transform: translateX(0);
+  }
+  .sheet-grip {
+    display: none;
+  }
+  .sheet h2 {
+    font-size: 19px;
+    padding-right: 40px;
+  }
+  .sheet > .muted:first-of-type {
+    font-size: 13px;
+  }
+  .field {
+    padding: 16px 0;
+  }
+  .field-label {
+    font-size: 15px;
+  }
+  .sheet-close {
+    display: grid;
+    position: absolute;
+    top: 22px;
+    right: 24px;
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    border: 1px solid var(--line);
+    background: var(--surface);
+    color: var(--ink-2);
+    font-size: 22px;
+    line-height: 1;
+    cursor: pointer;
+    place-items: center;
+    transition: 0.15s;
+  }
+  .sheet-close:hover {
+    color: var(--ink);
+    border-color: var(--ink-3);
+  }
+  .sheet-close:active {
+    transform: scale(0.94);
+  }
+
+  /* ---- floating overlays repositioned for wide screen ---- */
+  .alert-pop {
+    left: auto;
+    right: 24px;
+    top: 24px;
+    width: 392px;
+    border-radius: 18px;
+    padding: 15px 17px;
+  }
+  .alert-pop .ap-t {
+    font-size: 15px;
+  }
+  .alert-pop .ap-s {
+    font-size: 12.5px;
+  }
+  .toast {
+    bottom: 34px;
+  }
 }

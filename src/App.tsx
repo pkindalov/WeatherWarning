@@ -293,40 +293,49 @@ export default function App() {
         onSettings={() => setSheet("settings")}
       />
 
-      <LocationTabs
-        onSelect={(id) => {
-          setActive(id);
-          void refresh({ fit: true });
-        }}
-        onAdd={() => setSheet("locations")}
-      />
+      {/* workspace: left rail + radar. On desktop (≥900px) .workspace/.sidebar
+          become a grid/flex shell; below that they collapse to display:contents
+          so the children flow in the original mobile order (set via CSS order). */}
+      <div className="workspace">
+        <aside className="sidebar">
+          <div className="rail-label">{t("loc_title")}</div>
 
-      <StatusBanner
-        level={display.level}
-        title={display.title}
-        sub={display.sub}
-        disclaimer={display.level !== "safe" ? t("forecast_disclaimer") : undefined}
-      />
+          <LocationTabs
+            onSelect={(id) => {
+              setActive(id);
+              void refresh({ fit: true });
+            }}
+            onAdd={() => setSheet("locations")}
+          />
 
-      <MapView
-        active={active}
-        radiusKm={settings.radiusKm}
-        level={display.level}
-        cell={cell}
-        frames={frames}
-        host={host}
-        baseTime={baseTime}
-        fitToken={fitToken}
-      />
+          <StatusBanner
+            level={display.level}
+            title={display.title}
+            sub={display.sub}
+            disclaimer={display.level !== "safe" ? t("forecast_disclaimer") : undefined}
+          />
 
-      <Details result={result} />
+          <Details result={result} />
 
-      <FootBar
-        result={result}
-        refreshedAt={refreshedAt}
-        showNotifCta={showNotifCta}
-        onEnableNotif={() => void enableNotif()}
-      />
+          <FootBar
+            result={result}
+            refreshedAt={refreshedAt}
+            showNotifCta={showNotifCta}
+            onEnableNotif={() => void enableNotif()}
+          />
+        </aside>
+
+        <MapView
+          active={active}
+          radiusKm={settings.radiusKm}
+          level={display.level}
+          cell={cell}
+          frames={frames}
+          host={host}
+          baseTime={baseTime}
+          fitToken={fitToken}
+        />
+      </div>
 
       <AlertPop state={alertPop} onClose={() => setAlertPop((s) => ({ ...s, show: false }))} />
       <Toast msg={toastState.msg} show={toastState.show} />
@@ -336,6 +345,7 @@ export default function App() {
       <SettingsSheet
         open={sheet === "settings"}
         notifPerm={notifPerm}
+        onClose={() => setSheet(null)}
         onRefresh={(fit) => void refresh({ fit })}
         onToggleNotify={(on) => void toggleNotify(on)}
         onTest={testAlert}

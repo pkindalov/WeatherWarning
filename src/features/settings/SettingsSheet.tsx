@@ -7,6 +7,7 @@ import type { Lang } from "../../shared/i18n/dict";
 interface SettingsSheetProps {
   open: boolean;
   notifPerm: NotificationPermission | "unsupported";
+  onClose: () => void;
   onRefresh: (fit: boolean) => void;
   onToggleNotify: (on: boolean) => void;
   onTest: () => void;
@@ -19,6 +20,7 @@ function Toggle({ on, onClick }: { on: boolean; onClick: () => void }) {
 export default function SettingsSheet({
   open,
   notifPerm,
+  onClose,
   onRefresh,
   onToggleNotify,
   onTest,
@@ -39,6 +41,9 @@ export default function SettingsSheet({
 
   return (
     <div className={"sheet" + (open ? " open" : "")}>
+      <button className="sheet-close" type="button" aria-label="Close" onClick={onClose}>
+        ×
+      </button>
       <div className="sheet-grip" />
       <h2>{t("set_title")}</h2>
       <p className="muted">{t("set_sub")}</p>

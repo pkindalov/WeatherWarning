@@ -171,6 +171,9 @@ export default function LocationsSheet({ open, onClose, refresh, toast }: Locati
 
   return (
     <div className={"sheet" + (open ? " open" : "")}>
+      <button className="sheet-close" type="button" aria-label="Close" onClick={onClose}>
+        ×
+      </button>
       <div className="sheet-grip" />
       <h2>{t("loc_title")}</h2>
       <p className="muted">{t("loc_sub")}</p>
