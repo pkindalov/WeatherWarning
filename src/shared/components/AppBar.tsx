@@ -2,8 +2,10 @@ import { useEffect, useState } from "react";
 
 interface AppBarProps {
   refreshing: boolean;
+  mapMode: "rainviewer" | "windy";
   onRefresh: () => void;
   onSettings: () => void;
+  onToggleMapMode: () => void;
 }
 
 // 12-hour wall clock string for the desktop app bar (e.g. "9:05 PM").
@@ -16,7 +18,7 @@ const formatClock = (date: Date): string => {
   return `${hour12}:${paddedMinutes} ${ampm}`;
 };
 
-export default function AppBar({ refreshing, onRefresh, onSettings }: AppBarProps) {
+export default function AppBar({ refreshing, mapMode, onRefresh, onSettings, onToggleMapMode }: AppBarProps) {
   // Decorative clock shown only in the desktop layout (hidden via CSS on mobile).
   // Re-rendering every 15s is plenty since seconds aren't displayed.
   const [clock, setClock] = useState(() => formatClock(new Date()));
@@ -36,6 +38,18 @@ export default function AppBar({ refreshing, onRefresh, onSettings }: AppBarProp
       <div className="clock">{clock}</div>
       <div className="appbar-divider" />
       <div className="appbar-actions">
+        <button
+          className={"icon-btn" + (mapMode === "windy" ? " icon-btn--active" : "")}
+          title={mapMode === "windy" ? "Switch to RainViewer radar" : "Switch to Windy radar"}
+          aria-label="Toggle map source"
+          onClick={onToggleMapMode}
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M3 7l9-5 9 5v10l-9 5-9-5V7z" />
+            <path d="M12 2v20" />
+            <path d="M3 7l9 5 9-5" />
+          </svg>
+        </button>
         <button
           className={"icon-btn" + (refreshing ? " spin" : "")}
           title="Refresh radar"

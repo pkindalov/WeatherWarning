@@ -17,6 +17,7 @@ import AppBar from "./shared/components/AppBar";
 import LocationTabs from "./features/locations/LocationTabs";
 import StatusBanner from "./features/status/StatusBanner";
 import MapView from "./features/map/MapView";
+import WindyView from "./features/map/WindyView";
 import Details from "./features/status/Details";
 import FootBar from "./features/status/FootBar";
 import AlertPop, { type AlertPopState } from "./features/alerts/AlertPop";
@@ -49,6 +50,7 @@ export default function App() {
   const [baseTime, setBaseTime] = useState(Date.now() / 1000);
   const [fitToken, setFitToken] = useState(0);
   const [sheet, setSheet] = useState<"settings" | "locations" | null>(null);
+  const [mapMode, setMapMode] = useState<"rainviewer" | "windy">("windy");
   const [toastState, setToastState] = useState({ msg: "", show: false });
   const [alertPop, setAlertPop] = useState<AlertPopState>({ show: false, level: "danger", title: "", sub: "" });
   const [notifPerm, setNotifPerm] = useState<NotificationPermission | "unsupported">(() => N.permission());
@@ -286,11 +288,13 @@ export default function App() {
     <div id="app">
       <AppBar
         refreshing={refreshing}
+        mapMode={mapMode}
         onRefresh={() => {
           N.unlockAudio();
           void refresh({ fit: false, force: true });
         }}
         onSettings={() => setSheet("settings")}
+        onToggleMapMode={() => setMapMode((m) => (m === "rainviewer" ? "windy" : "rainviewer"))}
       />
 
       {/* workspace: left rail + radar. On desktop (≥900px) .workspace/.sidebar
@@ -325,16 +329,20 @@ export default function App() {
           />
         </aside>
 
-        <MapView
-          active={active}
-          radiusKm={settings.radiusKm}
-          level={display.level}
-          cell={cell}
-          frames={frames}
-          host={host}
-          baseTime={baseTime}
-          fitToken={fitToken}
-        />
+        {mapMode === "windy" ? (
+          <WindyView key={activeId ?? "default"} />
+        ) : (
+          <MapView
+            active={active}
+            radiusKm={settings.radiusKm}
+            level={display.level}
+            cell={cell}
+            frames={frames}
+            host={host}
+            baseTime={baseTime}
+            fitToken={fitToken}
+          />
+        )}
       </div>
 
       <AlertPop state={alertPop} onClose={() => setAlertPop((s) => ({ ...s, show: false }))} />
