@@ -20,6 +20,11 @@ export default function WindyView() {
         title="Windy radar"
         allowFullScreen
       />
+      {loc && (
+        <div className="windy-city-pin" aria-hidden="true">
+          <span className="windy-city-pin__name">{loc.name}</span>
+        </div>
+      )}
     </div>
   );
 }

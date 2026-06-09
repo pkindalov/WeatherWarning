@@ -377,6 +377,30 @@ body {
   height: 100%;
   border: none;
 }
+.windy-city-pin {
+  position: absolute;
+  /* sit at the map centre — Windy centres the view on the active city */
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 10;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2rem;
+}
+.windy-city-pin__name {
+  background: #e53935;
+  color: #fff;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  padding: 0.2rem 0.6rem;
+  border-radius: 0.9rem;
+  white-space: nowrap;
+  letter-spacing: 0.03em;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.45);
+}
 .leaflet-container {
   font-family: var(--font);
   background: var(--surface-2);
