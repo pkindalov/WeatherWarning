@@ -70,4 +70,25 @@ describe("Details", () => {
     expect(text).toContain("3.2 км"); // nearest distance, localised
     expect(text).toContain("Приближава"); // trend_approaching (bg)
   });
+
+  it("treats sub-20 dBZ as no meaningful echo and shows Clear overhead", () => {
+    const result: AnalysisResult = {
+      level: "safe",
+      trend: "steady",
+      eta: null,
+      etaDbz: null,
+      centerDbz: 15,
+      maxDbz: 15,
+      nearest: null,
+      threshold: 50,
+      radiusKm: 25,
+      frameTime: 1_700_000_000,
+      tainted: false,
+      future: [],
+    };
+    const { container } = wrap(<Details result={result} />);
+    const text = container.textContent ?? "";
+    expect(text).not.toContain("15"); // dBZ value must not be shown
+    expect(text).toContain("Чисто"); // d_clear in Bulgarian
+  });
 });
