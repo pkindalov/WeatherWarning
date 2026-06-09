@@ -81,15 +81,16 @@ const DBZ_55_RGBA: [number, number, number, number] = [255, 170, 255, 255];
 
 /**
  * Build a 256×256 RGBA pixel buffer with `hotCount` pixels painted with the
- * 55 dBZ color starting at (CLX + HOT_DX, CLY) and going right. Pixels that
+ * 55 dBZ color starting at (CLX + startDx, CLY) and going right. Pixels that
  * would fall outside the scan radius or the tile boundary are skipped.
+ * `startDx` defaults to HOT_DX (10 px, ~9 km) when omitted.
  */
-function buildPixelData(hotCount: number): Uint8ClampedArray {
+function buildPixelData(hotCount: number, startDx = HOT_DX): Uint8ClampedArray {
   const data = new Uint8ClampedArray(256 * 256 * 4); // all transparent
   const radiusPx = (CLUSTER_SETTINGS.radiusKm * 1000) / MPP;
 
   for (let i = 0; i < hotCount; i++) {
-    const x = CLX + HOT_DX + i;
+    const x = CLX + startDx + i;
     const y = CLY;
     if (x < 0 || x >= 256 || y < 0 || y >= 256) continue;
 
@@ -134,6 +135,45 @@ function stubDomTilesForPaths(pixelData: Uint8ClampedArray, hotPathSubstrings: s
       const url = urlQueue.shift() ?? "";
       const isHot = hotPathSubstrings.some((p) => url.includes(p));
       const data = isHot ? pixelData : new Uint8ClampedArray(256 * 256 * 4);
+      return {
+        width: 0,
+        height: 0,
+        getContext: () => ({
+          drawImage: () => {},
+          getImageData: () => ({ data }),
+        }),
+      } as unknown as HTMLCanvasElement;
+    },
+  );
+}
+
+/**
+ * Like stubDomTilesForPaths but accepts a map of path-substring → pixel data,
+ * allowing different frames to carry different cell positions.
+ */
+function stubDomTilesForPathMap(pathDataMap: Record<string, Uint8ClampedArray>): void {
+  const urlQueue: string[] = [];
+
+  vi.stubGlobal(
+    "Image",
+    class MockImage {
+      onload: (() => void) | null = null;
+      onerror: (() => void) | null = null;
+      crossOrigin = "";
+      set src(url: string) {
+        urlQueue.push(url);
+        queueMicrotask(() => this.onload?.());
+      }
+    },
+  );
+
+  const origCreateElement = document.createElement.bind(document);
+  vi.spyOn(document, "createElement").mockImplementation(
+    (tag: string, options?: ElementCreationOptions) => {
+      if (tag !== "canvas") return origCreateElement(tag, options);
+      const url = urlQueue.shift() ?? "";
+      const matchingKey = Object.keys(pathDataMap).find((p) => url.includes(p));
+      const data = matchingKey ? pathDataMap[matchingKey] : new Uint8ClampedArray(256 * 256 * 4);
       return {
         width: 0,
         height: 0,
@@ -293,6 +333,82 @@ describe("cluster filtering (MIN_CELL_PIXELS)", () => {
 
     const res = await analyze(CLUSTER_LOC, CLUSTER_SETTINGS);
     expect(res.nearest).not.toBeNull();
+    expect(res.trend).toBe("receding");
+  });
+
+  it("reports trend=steady when cell is present but no nowcast data is available", async () => {
+    // beforeEach stubs fetch with nowcast: [] — no future frames to predict from.
+    // Previously this was bugged: futureBest defaulted to Infinity which always
+    // compared > curDist + 1.5, producing "receding" with no real evidence.
+    stubDomTiles(MIN_CELL_PIXELS);
+    const res = await analyze(CLUSTER_LOC, CLUSTER_SETTINGS);
+    expect(res.nearest).not.toBeNull();
+    expect(res.trend).toBe("steady");
+  });
+
+  it("reports trend=approaching when a cell moves closer in future frames", async () => {
+    const CURRENT_PATH = "/past_approaching";
+    const FUTURE_PATH = "/nowcast_approaching";
+
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          host: HOST,
+          radar: {
+            past: [{ time: 1000, path: CURRENT_PATH }],
+            nowcast: [{ time: 1300, path: FUTURE_PATH }],
+          },
+        }),
+      }),
+    );
+
+    // Current: cell at dx=10 (~9 km). Future: same cell at dx=5 (~4.5 km) — clearly closer.
+    stubDomTilesForPathMap({
+      [CURRENT_PATH]: buildPixelData(MIN_CELL_PIXELS, 10),
+      [FUTURE_PATH]: buildPixelData(MIN_CELL_PIXELS, 5),
+    });
+
+    const res = await analyze(CLUSTER_LOC, CLUSTER_SETTINGS);
+    expect(res.trend).toBe("approaching");
+  });
+
+  it("reports trend=receding via futureWorst when the cell drifts past the hysteresis by the last nowcast frame", async () => {
+    // Bug: the old code used futureBest (min distance) for receding detection.
+    // A cell barely farther in frame 1 but clearly farther in frame 2 was classified
+    // "steady" because frame-1 distance was within the 1.5 km hysteresis band.
+    // The fix tracks futureWorst (max distance) for the receding check.
+    const CURRENT_PATH = "/past_recede_slow";
+    const FUTURE_PATH_1 = "/nowcast_recede_1";
+    const FUTURE_PATH_2 = "/nowcast_recede_2";
+
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          host: HOST,
+          radar: {
+            past: [{ time: 1000, path: CURRENT_PATH }],
+            nowcast: [
+              { time: 1300, path: FUTURE_PATH_1 },
+              { time: 1600, path: FUTURE_PATH_2 },
+            ],
+          },
+        }),
+      }),
+    );
+
+    // dx=10 ≈ 9.1 km current; dx=11 ≈ 10.0 km (barely outside — futureBest alone won't trigger);
+    // dx=14 ≈ 12.7 km (clearly past curDist + 1.5 km in the last frame — futureWorst triggers).
+    stubDomTilesForPathMap({
+      [CURRENT_PATH]: buildPixelData(MIN_CELL_PIXELS, 10),
+      [FUTURE_PATH_1]: buildPixelData(MIN_CELL_PIXELS, 11),
+      [FUTURE_PATH_2]: buildPixelData(MIN_CELL_PIXELS, 14),
+    });
+
+    const res = await analyze(CLUSTER_LOC, CLUSTER_SETTINGS);
     expect(res.trend).toBe("receding");
   });
 

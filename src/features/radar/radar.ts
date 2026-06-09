@@ -262,7 +262,14 @@ export async function analyze(loc: SavedLocation, settings: Settings): Promise<A
   let trend: AnalysisResult["trend"] = "steady";
   let eta: number | null = null;
   const curDist = cur.nearest ? cur.nearest.distanceKm : Infinity;
-  let futureBest = Infinity; // minimum distance the cell will reach across all nowcast frames
+  // futureBest: minimum distance the cell will reach (for approaching detection).
+  // futureWorst: maximum distance the cell will reach (for receding detection).
+  // Using the min for approaching captures the "will it ever get close?" question.
+  // Using the max for receding captures "has it clearly moved further away over the
+  // full window?" — using the min here would miss slow recession because the first
+  // nowcast frame is only slightly farther, staying within the hysteresis band.
+  let futureBest = Infinity;
+  let futureWorst = 0;
   let firstHitFrame: FutureFrame | null = null;
   for (const f of future) {
     const d =
@@ -272,12 +279,15 @@ export async function analyze(loc: SavedLocation, settings: Settings): Promise<A
           ? f.nearest.distanceKm
           : Infinity;
     if (d < futureBest) futureBest = d;
+    if (d > futureWorst) futureWorst = d;
     if (firstHitFrame == null && f.nearest && f.nearest.distanceKm <= radiusKm) firstHitFrame = f;
     if (firstHitFrame == null && f.centerDbz != null && f.centerDbz >= threshold) firstHitFrame = f;
   }
-  if (isFinite(futureBest) || isFinite(curDist)) {
+  // Only determine trend when nowcast data is available. With no future frames we
+  // have no basis for a direction prediction, so "steady" is the correct default.
+  if (future.length > 0 && (isFinite(futureBest) || isFinite(curDist))) {
     if (futureBest < curDist - 1.5) trend = "approaching";
-    else if (futureBest > curDist + 1.5) trend = "receding";
+    else if (futureWorst > curDist + 1.5) trend = "receding";
     else trend = "steady";
   }
   // ETA: if currently safe but a cell enters the radius in nowcast
