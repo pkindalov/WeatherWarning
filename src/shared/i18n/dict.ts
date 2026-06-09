@@ -120,7 +120,7 @@ export const DICT: Record<Lang, Record<string, string>> = {
     search_failed: "Търсенето е неуспешно.",
 
     // dBZ labels
-    lbl_mist: "Слаб дъжд / мъгла",
+    lbl_mist: "Слабо ехо / мъгла",
     lbl_rain: "Дъжд / сняг",
     lbl_downpour: "Пороен дъжд",
     lbl_hail_small: "Буря · дребна градушка",
@@ -247,7 +247,7 @@ export const DICT: Record<Lang, Record<string, string>> = {
     no_matches: "No matches.",
     search_failed: "Search failed.",
 
-    lbl_mist: "Light rain / mist",
+    lbl_mist: "Weak echo / mist",
     lbl_rain: "Rain / snow",
     lbl_downpour: "Heavy rain",
     lbl_hail_small: "Storm · small hail",

@@ -9,7 +9,7 @@ import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { useI18n } from "../../shared/i18n/I18nContext";
 import { LEGEND, dbzColor, dbzBandRange } from "../radar/core";
-import { radarTileTemplate, samplePointDbz } from "../radar/radar";
+import { radarTileTemplate, samplePointDbz, createFilteredRadarLayer } from "../radar/radar";
 import { lastPastIndex, nowMarkerPercent } from "./playback";
 import type { Level, NearestCell, RadarFrame, SavedLocation } from "../../shared/types";
 
@@ -216,16 +216,7 @@ export default function MapView({
     if (!group || !ready || !frames.length || !host) return;
     const f = frames[(frameIdx + frames.length) % frames.length];
     group.clearLayers();
-    L.tileLayer(radarTileTemplate(host, f.path), {
-      opacity: 0.72,
-      // RainViewer's global radar tiles only exist up to zoom 7; past that the
-      // server returns a "Zoom Level Not Supported" placeholder. Cap the native
-      // zoom so Leaflet upscales the z7 tile instead of requesting that placeholder.
-      maxNativeZoom: 7,
-      maxZoom: 19,
-      zIndex: 5,
-      tileSize: 256,
-    }).addTo(group);
+    createFilteredRadarLayer(radarTileTemplate(host, f.path)).addTo(group);
   }, [ready, frames, host, frameIdx]);
 
   /* ---- play loop ---- */
@@ -401,7 +392,7 @@ export default function MapView({
         <>
           <div className="map-pick-dot" style={{ left: pick.x, top: pick.y }} />
           <div className={pickClass} style={{ left: pick.x, top: pick.y }}>
-            {pick.dbz != null
+            {pick.dbz != null && pick.dbz >= 20
               ? `${pickHail ? "⚠ " : ""}${Math.round(pick.dbz)} dBZ · ${dbzLabel(pick.dbz)}`
               : t("d_no_echo")}
           </div>
@@ -436,24 +427,23 @@ export default function MapView({
             </button>
           </div>
           <div className="legend-bar">
-            {LEGEND.map((s, i) => (
-              <i
-                key={s.key}
-                className="legend-seg"
-                style={{ background: s.color }}
-                // Hover preview for mouse only. Touch fires a synthetic
-                // pointerenter + click together; ignoring the touch enter lets
-                // the click below toggle the tip on instead of cancelling it.
-                onPointerEnter={(e) => e.pointerType === "mouse" && setLegendTip(i)}
-                onPointerLeave={(e) =>
-                  e.pointerType === "mouse" && setLegendTip((c) => (c === i ? null : c))
-                }
-                onClick={() => setLegendTip((c) => (c === i ? null : i))}
-              />
-            ))}
+            {LEGEND.slice(1).map((s, i) => {
+              const idx = i + 1;
+              return (
+                <i
+                  key={s.key}
+                  className="legend-seg"
+                  style={{ background: s.color }}
+                  onPointerEnter={(e) => e.pointerType === "mouse" && setLegendTip(idx)}
+                  onPointerLeave={(e) =>
+                    e.pointerType === "mouse" && setLegendTip((c) => (c === idx ? null : c))
+                  }
+                  onClick={() => setLegendTip((c) => (c === idx ? null : idx))}
+                />
+              );
+            })}
           </div>
           <div className="legend-scale">
-            <span>0</span>
             <span>20</span>
             <span>35</span>
             <span>50</span>

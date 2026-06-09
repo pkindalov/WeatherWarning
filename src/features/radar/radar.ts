@@ -5,6 +5,7 @@
    alerts samples RainViewer tiles pixel-by-pixel.
    Ported from the original vanilla `Radar` namespace.
    ============================================================ */
+import L from "leaflet";
 import * as C from "./core";
 import type {
   AnalysisResult,
@@ -72,6 +73,55 @@ function sampleTileUrl(host: string, path: string, z: number, x: number, y: numb
 // it readable without needing smoothing. Sampling stays 256/0_0.
 export function radarTileTemplate(host: string, path: string) {
   return `${host}${path}/512/{z}/{x}/{y}/${COLOR_SCHEME}/0_0.png`;
+}
+
+// Canvas tile layer that strips sub-20 dBZ (noise/clear-air echoes) from the
+// rendered tiles before Leaflet displays them.
+export function createFilteredRadarLayer(urlTemplate: string): L.GridLayer {
+  const FilteredLayer = L.GridLayer.extend({
+    createTile(this: L.GridLayer, coords: L.Coords, done: L.DoneCallback) {
+      const display = document.createElement("canvas");
+      display.width = 256;
+      display.height = 256;
+      const displayCtx = display.getContext("2d")!;
+
+      const url = urlTemplate
+        .replace("{z}", String(coords.z))
+        .replace("{x}", String(coords.x))
+        .replace("{y}", String(coords.y));
+
+      const img = new Image();
+      img.crossOrigin = "anonymous";
+      img.onload = () => {
+        // Process at the image's native 512px resolution so colorToDbz sees
+        // unblended palette colours, then downscale to the 256px tile slot.
+        const proc = document.createElement("canvas");
+        proc.width = 512;
+        proc.height = 512;
+        const procCtx = proc.getContext("2d", { willReadFrequently: true })!;
+        procCtx.drawImage(img, 0, 0, 512, 512);
+        const frame = procCtx.getImageData(0, 0, 512, 512);
+        const px = frame.data;
+        for (let i = 0; i < px.length; i += 4) {
+          const dbz = C.colorToDbz(px[i], px[i + 1], px[i + 2], px[i + 3]);
+          if (dbz !== null && dbz < 20) px[i + 3] = 0;
+        }
+        procCtx.putImageData(frame, 0, 0);
+        displayCtx.drawImage(proc, 0, 0, 256, 256);
+        done(undefined, display);
+      };
+      img.onerror = () => done(new Error("tile failed"), display);
+      img.src = url;
+      return display;
+    },
+  });
+  return new (FilteredLayer as any)({
+    tileSize: 256,
+    opacity: 0.72,
+    maxNativeZoom: 7,
+    maxZoom: 19,
+    zIndex: 5,
+  }) as L.GridLayer;
 }
 
 /* ---------- load one tile into a canvas (CORS) ---------- */

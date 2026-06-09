@@ -30,11 +30,9 @@ export default function Details({ result }: DetailsProps) {
     );
   }
 
-  const overheadV =
-    result.centerDbz != null
-      ? `${Math.round(result.centerDbz)}<small> dBZ</small>`
-      : t("d_clear");
-  const overheadX = result.centerDbz != null ? dbzLabel(result.centerDbz) : t("d_no_echo");
+  const meaningfulDbz = result.centerDbz != null && result.centerDbz >= 20 ? result.centerDbz : null;
+  const overheadV = meaningfulDbz != null ? `${Math.round(meaningfulDbz)}<small> dBZ</small>` : t("d_clear");
+  const overheadX = meaningfulDbz != null ? dbzLabel(meaningfulDbz) : t("d_no_echo");
 
   const nearestV = result.nearest ? fmtKm(result.nearest.distanceKm) : t("d_none");
   const nearestX = result.nearest
