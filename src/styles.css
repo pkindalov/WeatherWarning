@@ -377,6 +377,21 @@ body {
   height: 100%;
   border: none;
 }
+.windy-radius {
+  position: absolute;
+  /* centred like the pin — the embed opens centred on the active city; the
+     diameter (--d) is computed for the embed's fixed zoom in WindyView.tsx */
+  top: 50%;
+  left: 50%;
+  width: var(--d);
+  height: var(--d);
+  transform: translate(-50%, -50%);
+  border: 1.5px dashed var(--safe);
+  border-radius: 50%;
+  background: color-mix(in oklab, var(--safe) 8%, transparent);
+  z-index: 9;
+  pointer-events: none;
+}
 .windy-city-pin {
   position: absolute;
   /* sit at the map centre — Windy centres the view on the active city */
