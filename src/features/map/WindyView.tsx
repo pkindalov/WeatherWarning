@@ -36,7 +36,9 @@ export const fitEmbedZoom = (
 
 export default function WindyView() {
   const { locations, activeId, settings } = useStore();
-  const loc = locations.find((l) => l.id === activeId);
+  // same "active location" rule as App.tsx / getActive(): a stale or missing
+  // activeId falls back to the first saved location, not the world view
+  const loc = locations.find((l) => l.id === activeId) ?? locations[0];
   const lat = loc?.lat ?? 20;
   const lon = loc?.lon ?? 0;
 

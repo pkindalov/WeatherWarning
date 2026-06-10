@@ -66,6 +66,21 @@ describe("WindyView", () => {
     expect(src).toContain("calendar=now");
   });
 
+  it("falls back to the first saved location when activeId is stale", () => {
+    // the rest of the app (App.tsx, getActive) treats a stale/missing activeId
+    // as "use the first saved location" — the Windy view must agree, not show
+    // the world map while the radar map shows the town
+    localStorage.setItem(
+      "wheatherwarning.v1",
+      JSON.stringify({ locations: [TRYAVNA], activeId: "gone" }),
+    );
+    const container = renderView();
+    const src = container.querySelector<HTMLIFrameElement>(".windy-iframe")!.src;
+    expect(src).toContain(`lat=${TRYAVNA.lat}`);
+    expect(src).toContain(`lon=${TRYAVNA.lon}`);
+    expect(container.querySelector(".windy-radius")).not.toBeNull();
+  });
+
   it("falls back to the world view when no location is saved", () => {
     const container = renderView();
     const src = container.querySelector<HTMLIFrameElement>(".windy-iframe")!.src;
