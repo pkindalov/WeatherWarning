@@ -105,6 +105,40 @@ export default function SettingsSheet({
         />
       </div>
 
+      {/* radius circle colour — Windy view */}
+      <div className="field">
+        <div className="field-row">
+          <div>
+            <div className="field-label">{t("set_circle_windy")}</div>
+            <div className="field-desc">{t("set_circle_windy_d")}</div>
+          </div>
+          <input
+            type="color"
+            className="color-swatch"
+            value={settings.radiusColorWindy}
+            onChange={(e) => setSetting("radiusColorWindy", e.target.value)}
+            aria-label={t("set_circle_windy")}
+          />
+        </div>
+      </div>
+
+      {/* radius circle colour — radar map */}
+      <div className="field">
+        <div className="field-row">
+          <div>
+            <div className="field-label">{t("set_circle_map")}</div>
+            <div className="field-desc">{t("set_circle_map_d")}</div>
+          </div>
+          <input
+            type="color"
+            className="color-swatch"
+            value={settings.radiusColorMap}
+            onChange={(e) => setSetting("radiusColorMap", e.target.value)}
+            aria-label={t("set_circle_map")}
+          />
+        </div>
+      </div>
+
       {/* auto-update */}
       <div className="field">
         <div className="field-row">

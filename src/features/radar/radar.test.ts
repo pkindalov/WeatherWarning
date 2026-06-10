@@ -57,6 +57,8 @@ const CLUSTER_SETTINGS: Settings = {
   vibrate: false,
   autoRefresh: false,
   autoRefreshMin: 5,
+  radiusColorWindy: "#14532d",
+  radiusColorMap: "#1f9d72",
 };
 const HOST = "https://rv.test";
 const PATH = "/radar/ct";

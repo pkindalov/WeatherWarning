@@ -82,4 +82,23 @@ describe("WindyView", () => {
     // default 25 km radius around Tryavna at the embed's zoom 10
     expect(diameter).toBeCloseTo(2 * alertRadiusPx(TRYAVNA.lat, 25, 10), 0);
   });
+
+  it("colours the circle with the dark default for contrast on the embed", () => {
+    seedLocation();
+    const circle = renderView().querySelector<HTMLElement>(".windy-radius");
+    expect(circle!.style.getPropertyValue("--c")).toBe("#14532d");
+  });
+
+  it("colours the circle from the radiusColorWindy setting", () => {
+    localStorage.setItem(
+      "wheatherwarning.v1",
+      JSON.stringify({
+        settings: { radiusColorWindy: "#112233" },
+        locations: [TRYAVNA],
+        activeId: TRYAVNA.id,
+      }),
+    );
+    const circle = renderView().querySelector<HTMLElement>(".windy-radius");
+    expect(circle!.style.getPropertyValue("--c")).toBe("#112233");
+  });
 });

@@ -380,15 +380,15 @@ body {
 .windy-radius {
   position: absolute;
   /* centred like the pin — the embed opens centred on the active city; the
-     diameter (--d) is computed for the embed's fixed zoom in WindyView.tsx */
+     diameter (--d) and colour (--c, user setting) come from WindyView.tsx */
   top: 50%;
   left: 50%;
   width: var(--d);
   height: var(--d);
   transform: translate(-50%, -50%);
-  border: 1.5px dashed var(--safe);
+  border: 2px dashed var(--c, var(--safe));
   border-radius: 50%;
-  background: color-mix(in oklab, var(--safe) 8%, transparent);
+  background: color-mix(in oklab, var(--c, var(--safe)) 10%, transparent);
   z-index: 9;
   pointer-events: none;
 }
@@ -1040,6 +1040,18 @@ input[type="range"]::-moz-range-thumb {
   background: var(--surface);
   border: 2px solid var(--brand);
   cursor: pointer;
+}
+
+/* colour swatch picker (radius circle colours) */
+.color-swatch {
+  width: 46px;
+  height: 27px;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 0.5rem;
+  background: none;
+  cursor: pointer;
+  flex: none;
 }
 
 /* toggle */

@@ -161,6 +161,33 @@ describe("SettingsSheet – alert radius slider", () => {
   });
 });
 
+// ── Radius circle colours ────────────────────────────────────────────────────
+
+describe("SettingsSheet – radius circle colours", () => {
+  const colorInput = (labelText: string): HTMLInputElement => {
+    const field = screen.getByText(labelText).closest(".field")!;
+    return field.querySelector<HTMLInputElement>("input[type=color]")!;
+  };
+
+  it("shows both pickers with their default colours", () => {
+    renderSheet();
+    expect(colorInput("Цвят на радиуса (Windy)").value).toBe("#14532d");
+    expect(colorInput("Цвят на радиуса (радарна карта)").value).toBe("#1f9d72");
+  });
+
+  it("changing the Windy picker persists radiusColorWindy", () => {
+    renderSheet();
+    fireEvent.change(colorInput("Цвят на радиуса (Windy)"), { target: { value: "#112233" } });
+    expect(storedSettings().radiusColorWindy).toBe("#112233");
+  });
+
+  it("changing the map picker persists radiusColorMap", () => {
+    renderSheet();
+    fireEvent.change(colorInput("Цвят на радиуса (радарна карта)"), { target: { value: "#aabbcc" } });
+    expect(storedSettings().radiusColorMap).toBe("#aabbcc");
+  });
+});
+
 // ── Auto-refresh toggle ──────────────────────────────────────────────────────
 
 describe("SettingsSheet – auto-refresh toggle", () => {

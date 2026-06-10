@@ -16,6 +16,7 @@ import type { Level, NearestCell, RadarFrame, SavedLocation } from "../../shared
 interface MapViewProps {
   active: SavedLocation | null;
   radiusKm: number;
+  radiusColor: string; // user-picked colour for the alert-radius circle
   level: Level;
   cell: NearestCell | null;
   frames: RadarFrame[];
@@ -47,6 +48,7 @@ function pinIcon(color: string) {
 export default function MapView({
   active,
   radiusKm,
+  radiusColor,
   level,
   cell,
   frames,
@@ -151,19 +153,19 @@ export default function MapView({
     if (!circleRef.current) {
       circleRef.current = L.circle(ll, {
         radius: radiusKm * 1000,
-        color,
+        color: radiusColor,
         weight: 1.5,
         opacity: 0.65,
-        fillColor: color,
+        fillColor: radiusColor,
         fillOpacity: 0.06,
         dashArray: "4 5",
       }).addTo(map);
     } else {
       circleRef.current.setLatLng(ll);
       circleRef.current.setRadius(radiusKm * 1000);
-      circleRef.current.setStyle({ color, fillColor: color });
+      circleRef.current.setStyle({ color: radiusColor, fillColor: radiusColor });
     }
-  }, [ready, active, radiusKm, level]);
+  }, [ready, active, radiusKm, radiusColor, level]);
 
   /* ---- storm-cell marker ---- */
   useEffect(() => {

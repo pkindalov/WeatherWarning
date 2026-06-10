@@ -335,6 +335,7 @@ export default function App() {
           <MapView
             active={active}
             radiusKm={settings.radiusKm}
+            radiusColor={settings.radiusColorMap}
             level={display.level}
             cell={cell}
             frames={frames}

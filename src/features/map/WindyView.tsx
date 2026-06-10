@@ -78,7 +78,12 @@ export default function WindyView() {
           <div
             className="windy-radius"
             aria-hidden="true"
-            style={{ "--d": `${Math.round(circleDiameterPx)}px` } as CSSProperties}
+            style={
+              {
+                "--d": `${Math.round(circleDiameterPx)}px`,
+                "--c": settings.radiusColorWindy,
+              } as CSSProperties
+            }
           />
           <div className="windy-city-pin" aria-hidden="true">
             <span className="windy-city-pin__name">{loc.name}</span>

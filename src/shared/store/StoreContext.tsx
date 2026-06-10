@@ -20,6 +20,9 @@ const DEFAULTS: PersistState = {
     vibrate: true,
     autoRefresh: true,
     autoRefreshMin: 20,
+    // dark green: the pale --safe green washes out on the Windy embed's basemap
+    radiusColorWindy: "#14532d",
+    radiusColorMap: "#1f9d72", // the map's original safe-level green
   },
   locations: [],
   activeId: null,

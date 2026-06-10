@@ -9,6 +9,8 @@ export interface Settings {
   vibrate: boolean;
   autoRefresh: boolean;
   autoRefreshMin: number;
+  radiusColorWindy: string; // alert-radius circle colour on the Windy embed
+  radiusColorMap: string; // alert-radius circle colour on the radar (Leaflet) map
 }
 
 export type LocationKind = "home" | "work" | "family" | "park" | "current" | "other";
