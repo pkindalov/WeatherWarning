@@ -30,6 +30,26 @@ const COLOR_SCHEME = 2;
 // ground clutter — they are invisible on the smoothed display tiles but still
 // show up in the unsmoothed sample tiles used by the warning engine.
 export const MIN_CELL_PIXELS = 4;
+// Static false echoes: RainViewer's composite occasionally "freezes" a patch of
+// pixels (clutter/interference baked in from one source radar) that then repeats
+// byte-for-byte in every frame — e.g. the phantom 55 dBZ cell south of Tryavna
+// on 2026-06-11 that sat pixel-identical for 30+ minutes while real echoes moved.
+// Real precipitation never reproduces the exact same dBZ at the exact same pixel
+// in a later frame, so a candidate pixel that matches the reference frame (~30
+// min back) or the previous frame (~10 min back) exactly is treated as clutter
+// and skipped. Worst case for real weather is a slow-updating source radar whose
+// scan RainViewer repeats across consecutive 10-min frames — that delays a real
+// alert by one frame, which is the accepted 2-scan-persistence tradeoff.
+export const STATIC_ECHO_LOOKBACK_FRAMES = 3;
+// Newborn-cell rule (2-scan persistence): a cell that materializes at full
+// strength where the previous frame showed no echo at all is almost always an
+// injected artifact, not weather — e.g. the phantom 59 dBZ core SW of Yambol on
+// 2026-06-11 that appeared after 12 consecutive clear frames. Real storms grow
+// through a weak-echo stage first, so a candidate pixel is only trusted when the
+// previous frame had at least a PRECURSOR_DBZ echo within PRECURSOR_RADIUS_KM.
+// If the cell is real, the next frame (~10 min) confirms it and the alert fires.
+export const PRECURSOR_DBZ = 20;
+export const PRECURSOR_RADIUS_KM = 10;
 const tileCache = new Map<string, Promise<HTMLCanvasElement | null>>();
 
 interface MapsData {
@@ -185,14 +205,47 @@ export async function samplePointDbz(
 }
 
 /* ---------- sample one radar frame around a point ---------- */
+// FrameSample plus the frame's raw pixel evidence, used as reference data for
+// the false-echo rules. Internal only — stripped before samples land in
+// AnalysisResult.
+//   echoes:    ≥threshold pixels as "px,py,dbz" keys (frozen-echo rejection)
+//   wetPixels: ≥PRECURSOR_DBZ pixel positions (newborn-cell rejection)
+interface SampledFrame extends FrameSample {
+  echoes: Set<string>;
+  wetPixels: Array<{ px: number; py: number }>;
+}
+
+// Evidence from earlier frames used to reject false echoes in the frame being
+// sampled. prevWetPixels is null when no previous frame exists (fail open).
+interface EchoFilters {
+  staticEchoes: Set<string>;
+  prevWetPixels: Array<{ px: number; py: number }> | null;
+}
+
+function hasWetNeighbor(
+  wet: Array<{ px: number; py: number }>,
+  px: number,
+  py: number,
+  radiusPx: number
+): boolean {
+  const r2 = radiusPx * radiusPx;
+  for (const w of wet) {
+    const dx = w.px - px;
+    const dy = w.py - py;
+    if (dx * dx + dy * dy <= r2) return true;
+  }
+  return false;
+}
+
 async function sampleFrame(
   host: string,
   path: string,
   lat: number,
   lon: number,
   radiusKm: number,
-  threshold: number
-): Promise<FrameSample> {
+  threshold: number,
+  filters?: EchoFilters
+): Promise<SampledFrame> {
   const z = SAMPLE_ZOOM;
   const center = C.lonLatToPixel(lat, lon, z);
   const mpp = C.metresPerPixel(lat, z);
@@ -256,6 +309,9 @@ async function sampleFrame(
   let maxDbz: number | null = centerDbz;
   let nearest: NearestCell | null = null;
   let cellPixels = 0;
+  const echoes = new Set<string>();
+  const wetPixels: Array<{ px: number; py: number }> = [];
+  const precursorRadiusPx = (PRECURSOR_RADIUS_KM * 1000) / mpp;
   const step = 1;
   for (let px = minPx; px <= maxPx; px += step) {
     for (let py = minPy; py <= maxPy; py += step) {
@@ -266,7 +322,23 @@ async function sampleFrame(
       const v = dbzAt(px, py);
       if (v == null) continue;
       if (maxDbz == null || v > maxDbz) maxDbz = v;
+      if (v >= PRECURSOR_DBZ) wetPixels.push({ px, py });
       if (v >= threshold) {
+        const key = `${px},${py},${v}`;
+        echoes.add(key);
+        if (filters) {
+          // Identical dBZ at the identical pixel as an earlier frame: a frozen
+          // echo is clutter, not weather (see STATIC_ECHO_LOOKBACK_FRAMES).
+          if (filters.staticEchoes.has(key)) continue;
+          // No echo anywhere near this spot one frame ago: a full-strength
+          // newborn cell is held back until the next frame confirms it (see
+          // PRECURSOR_DBZ / PRECURSOR_RADIUS_KM).
+          if (
+            filters.prevWetPixels !== null &&
+            !hasWetNeighbor(filters.prevWetPixels, px, py, precursorRadiusPx)
+          )
+            continue;
+        }
         cellPixels++;
         const distKm = (distPx * mpp) / 1000;
         if (!nearest || distKm < nearest.distanceKm) {
@@ -279,7 +351,7 @@ async function sampleFrame(
   }
   // Suppress single-pixel AP artifacts: a real cell needs spatial extent.
   if (cellPixels < MIN_CELL_PIXELS) nearest = null;
-  return { centerDbz, maxDbz, nearest, tainted };
+  return { centerDbz, maxDbz, nearest, tainted, echoes, wetPixels };
 }
 
 /* ---------- full analysis for a location ---------- */
@@ -293,14 +365,50 @@ export async function analyze(loc: SavedLocation, settings: Settings): Promise<A
   const radiusKm = settings.radiusKm;
 
   const currentFrame = frames.past[frames.past.length - 1];
-  const cur = await sampleFrame(host, currentFrame.path, loc.lat, loc.lon, radiusKm, threshold);
 
-  // sample a couple of nowcast frames for the trend
+  // Earlier frames provide the evidence for the false-echo rules: the previous
+  // frame (~10 min back) for the newborn + frozen checks, and a reference frame
+  // ~30 min back for slow-moving frozen artifacts. With too little history the
+  // checks are skipped — better a possible false alarm than a missed storm.
+  const prevIndex = frames.past.length - 2;
+  const prev =
+    prevIndex >= 0
+      ? await sampleFrame(host, frames.past[prevIndex].path, loc.lat, loc.lon, radiusKm, threshold)
+      : null;
+  const refIndex = frames.past.length - 1 - STATIC_ECHO_LOOKBACK_FRAMES;
+  const ref =
+    refIndex >= 0
+      ? await sampleFrame(host, frames.past[refIndex].path, loc.lat, loc.lon, radiusKm, threshold)
+      : null;
+  let filters: EchoFilters | undefined;
+  if (prev !== null || ref !== null) {
+    const staticEchoes = new Set([...(prev?.echoes ?? []), ...(ref?.echoes ?? [])]);
+    filters = { staticEchoes, prevWetPixels: prev !== null ? prev.wetPixels : null };
+  }
+
+  const cur = await sampleFrame(
+    host,
+    currentFrame.path,
+    loc.lat,
+    loc.lon,
+    radiusKm,
+    threshold,
+    filters
+  );
+
+  // sample a couple of nowcast frames for the trend; a false echo extrapolates
+  // into the nowcast too, so the same filters apply there
   const future: FutureFrame[] = [];
   const nowFrames = frames.now.slice(0, 3);
   for (const f of nowFrames) {
-    const r = await sampleFrame(host, f.path, loc.lat, loc.lon, radiusKm, threshold);
-    future.push({ time: f.time, ...r });
+    const r = await sampleFrame(host, f.path, loc.lat, loc.lon, radiusKm, threshold, filters);
+    future.push({
+      time: f.time,
+      centerDbz: r.centerDbz,
+      maxDbz: r.maxDbz,
+      nearest: r.nearest,
+      tainted: r.tainted,
+    });
   }
 
   // ---- derive status ----

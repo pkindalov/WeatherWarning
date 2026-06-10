@@ -82,14 +82,20 @@ const HOT_TILE_URL = `${HOST}${PATH}/256/${ZOOM}/${TILE_X}/${TILE_Y}/2/0_0.png`;
 
 // 55 dBZ color from RainViewer's Universal Blue palette (UB_PALETTE[55]).
 const DBZ_55_RGBA: [number, number, number, number] = [255, 170, 255, 255];
+// 20 dBZ color (UB_PALETTE[20]) — a weak "precursor" echo below the alert threshold.
+const DBZ_20_RGBA: [number, number, number, number] = [0, 163, 224, 255];
 
 /**
  * Build a 256×256 RGBA pixel buffer with `hotCount` pixels painted with the
- * 55 dBZ color starting at (CLX + startDx, CLY) and going right. Pixels that
- * would fall outside the scan radius or the tile boundary are skipped.
- * `startDx` defaults to HOT_DX (10 px, ~9 km) when omitted.
+ * given color (55 dBZ by default) starting at (CLX + startDx, CLY) and going
+ * right. Pixels that would fall outside the scan radius or the tile boundary
+ * are skipped. `startDx` defaults to HOT_DX (10 px, ~9 km) when omitted.
  */
-function buildPixelData(hotCount: number, startDx = HOT_DX): Uint8ClampedArray {
+function buildPixelData(
+  hotCount: number,
+  startDx = HOT_DX,
+  rgba: readonly [number, number, number, number] = DBZ_55_RGBA
+): Uint8ClampedArray {
   const data = new Uint8ClampedArray(256 * 256 * 4); // all transparent
   const radiusPx = (CLUSTER_SETTINGS.radiusKm * 1000) / MPP;
 
@@ -106,7 +112,7 @@ function buildPixelData(hotCount: number, startDx = HOT_DX): Uint8ClampedArray {
     if (Math.sqrt(dx * dx + dy * dy) > radiusPx) continue;
 
     const idx = (y * 256 + x) * 4;
-    [data[idx], data[idx + 1], data[idx + 2], data[idx + 3]] = DBZ_55_RGBA;
+    [data[idx], data[idx + 1], data[idx + 2], data[idx + 3]] = rgba;
   }
   return data;
 }
@@ -414,6 +420,179 @@ describe("cluster filtering (MIN_CELL_PIXELS)", () => {
 
     const res = await analyze(CLUSTER_LOC, CLUSTER_SETTINGS);
     expect(res.trend).toBe("receding");
+  });
+
+  it("suppresses a cell that is pixel-identical to the reference frame (static false echo)", async () => {
+    // Reproduces the 2026-06-11 Tryavna incident: a 55 dBZ blob appeared in
+    // RainViewer's composite and repeated byte-for-byte in every frame for 30+
+    // minutes (real precipitation never freezes in place). The same frozen
+    // pixels must not fire a warning, and the nowcast extrapolation of the
+    // artifact must not trigger an ETA pre-warn either.
+    const PAST_PATHS = ["/static_p0", "/static_p1", "/static_p2", "/static_p3"];
+    const NOWCAST_PATH = "/static_n0";
+
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          host: HOST,
+          radar: {
+            past: PAST_PATHS.map((path, i) => ({ time: 1000 + i * 600, path })),
+            nowcast: [{ time: 1000 + 4 * 600, path: NOWCAST_PATH }],
+          },
+        }),
+      }),
+    );
+
+    const artifact = buildPixelData(MIN_CELL_PIXELS + 2);
+    stubDomTilesForPathMap({
+      [PAST_PATHS[0]]: artifact, // reference frame, 3 frames (~30 min) back
+      [PAST_PATHS[2]]: artifact, // previous frame: identical pixels
+      [PAST_PATHS[3]]: artifact, // current frame: identical pixels
+      [NOWCAST_PATH]: artifact, // nowcast: static artifact extrapolates in place
+    });
+
+    const res = await analyze(CLUSTER_LOC, CLUSTER_SETTINGS);
+    expect(res.nearest).toBeNull();
+    expect(res.level).toBe("safe");
+    expect(res.eta).toBeNull();
+    expect(res.trend).toBe("steady");
+    // The raw peak is still reported, same rule as MIN_CELL_PIXELS suppression.
+    expect(res.maxDbz).toBe(55);
+  });
+
+  it("keeps the warning for a real cell that moved since the reference frame", async () => {
+    const PAST_PATHS = ["/moving_p0", "/moving_p1", "/moving_p2", "/moving_p3"];
+
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          host: HOST,
+          radar: {
+            past: PAST_PATHS.map((path, i) => ({ time: 1000 + i * 600, path })),
+            nowcast: [],
+          },
+        }),
+      }),
+    );
+
+    // 30 min ago (reference) and 10 min ago (previous) the cell sat at dx=15;
+    // now it sits at dx=10 — no pixel overlap with either, but the previous
+    // frame's echo is close enough (~4.5 km) to count as a precursor.
+    stubDomTilesForPathMap({
+      [PAST_PATHS[0]]: buildPixelData(MIN_CELL_PIXELS, 15),
+      [PAST_PATHS[2]]: buildPixelData(MIN_CELL_PIXELS, 15),
+      [PAST_PATHS[3]]: buildPixelData(MIN_CELL_PIXELS, 10),
+    });
+
+    const res = await analyze(CLUSTER_LOC, CLUSTER_SETTINGS);
+    expect(res.nearest).not.toBeNull();
+    expect(res.nearest!.dbz).toBe(55);
+    expect(res.level).toBe("warning");
+  });
+
+  it("suppresses when the current frame is pixel-identical to the previous frame", async () => {
+    // Even without 30 min of history, a cell that repeats byte-for-byte in two
+    // consecutive frames is a frozen echo, not weather. Real precipitation never
+    // reproduces identical pixels; at worst a slow-updating source radar delays
+    // a real alert by one frame (~10 min).
+    const PAST_PATHS = ["/short_p0", "/short_p1"];
+
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          host: HOST,
+          radar: {
+            past: PAST_PATHS.map((path, i) => ({ time: 1000 + i * 600, path })),
+            nowcast: [],
+          },
+        }),
+      }),
+    );
+
+    const artifact = buildPixelData(MIN_CELL_PIXELS);
+    stubDomTilesForPathMap({
+      [PAST_PATHS[0]]: artifact,
+      [PAST_PATHS[1]]: artifact,
+    });
+
+    const res = await analyze(CLUSTER_LOC, CLUSTER_SETTINGS);
+    expect(res.nearest).toBeNull();
+    expect(res.level).toBe("safe");
+  });
+
+  it("suppresses a strong cell born from completely clear sky (no precursor echo)", async () => {
+    // Reproduces the 2026-06-11 Yambol incident: 12 consecutive clear frames,
+    // then a 37-px 59 dBZ core materializes from nothing. Real storms grow
+    // through a weak-echo stage first, so a full-strength cell with no echo at
+    // all in the previous frame is held back for one frame (2-scan persistence).
+    // The nowcast extrapolation of the newborn blob must not pre-warn either.
+    const PAST_PATHS = ["/newborn_p0", "/newborn_p1"];
+    const NOWCAST_PATH = "/newborn_n0";
+
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          host: HOST,
+          radar: {
+            past: PAST_PATHS.map((path, i) => ({ time: 1000 + i * 600, path })),
+            nowcast: [{ time: 1000 + 2 * 600, path: NOWCAST_PATH }],
+          },
+        }),
+      }),
+    );
+
+    const cell = buildPixelData(MIN_CELL_PIXELS + 2);
+    stubDomTilesForPathMap({
+      // PAST_PATHS[0] (previous frame) intentionally absent — fully transparent.
+      [PAST_PATHS[1]]: cell,
+      [NOWCAST_PATH]: cell,
+    });
+
+    const res = await analyze(CLUSTER_LOC, CLUSTER_SETTINGS);
+    expect(res.nearest).toBeNull();
+    expect(res.level).toBe("safe");
+    expect(res.eta).toBeNull();
+    expect(res.maxDbz).toBe(55);
+  });
+
+  it("keeps the warning for a cell that grew out of a weak precursor echo", async () => {
+    // The legit version of the newborn case: 10 min ago there was a 20 dBZ
+    // shower at the same spot, now it intensified to 55 dBZ. Different pixel
+    // values, so the frozen check passes; the precursor satisfies the newborn
+    // check — the warning must fire.
+    const PAST_PATHS = ["/grown_p0", "/grown_p1"];
+
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          host: HOST,
+          radar: {
+            past: PAST_PATHS.map((path, i) => ({ time: 1000 + i * 600, path })),
+            nowcast: [],
+          },
+        }),
+      }),
+    );
+
+    stubDomTilesForPathMap({
+      [PAST_PATHS[0]]: buildPixelData(MIN_CELL_PIXELS, HOT_DX, DBZ_20_RGBA),
+      [PAST_PATHS[1]]: buildPixelData(MIN_CELL_PIXELS),
+    });
+
+    const res = await analyze(CLUSTER_LOC, CLUSTER_SETTINGS);
+    expect(res.nearest).not.toBeNull();
+    expect(res.nearest!.dbz).toBe(55);
+    expect(res.level).toBe("warning");
   });
 
   it("throws when past frames are empty even if nowcast frames are present", async () => {
