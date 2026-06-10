@@ -60,6 +60,7 @@ const CLUSTER_SETTINGS: Settings = {
   radiusColorWindy: "#14532d",
   radiusColorMap: "#1f9d72",
   showWindyPin: true,
+  mapMode: "windy",
 };
 const HOST = "https://rv.test";
 const PATH = "/radar/ct";

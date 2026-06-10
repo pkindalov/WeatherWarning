@@ -1167,6 +1167,9 @@ input[type="range"]::-moz-range-thumb {
   gap: 8px;
   flex-wrap: wrap;
 }
+.chip-row--nowrap {
+  flex-wrap: nowrap;
+}
 .chip {
   padding: 8px 13px;
   border-radius: 999px;

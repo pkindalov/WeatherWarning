@@ -77,6 +77,11 @@ export const DICT: Record<Lang, Record<string, string>> = {
     // buttons
     enable_alerts: "Включи известия",
 
+    // app bar
+    map_to_rainviewer: "Превключи към RainViewer радар",
+    map_to_windy: "Превключи към Windy радар",
+    map_toggle: "Смяна на източника на картата",
+
     // settings
     set_title: "Настройки",
     set_sub: "Настройте кое е опасно и как да получавате предупреждения.",
@@ -214,6 +219,10 @@ export const DICT: Record<Lang, Record<string, string>> = {
     scrub_aria: "Scrub radar frames",
 
     enable_alerts: "Turn on alerts",
+
+    map_to_rainviewer: "Switch to RainViewer radar",
+    map_to_windy: "Switch to Windy radar",
+    map_toggle: "Toggle map source",
 
     set_title: "Settings",
     set_sub: "Tune what counts as dangerous and how you get warned.",

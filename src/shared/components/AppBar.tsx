@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
+import { useI18n } from "../i18n/I18nContext";
+import type { MapMode } from "../types";
 
 interface AppBarProps {
   refreshing: boolean;
-  mapMode: "rainviewer" | "windy";
+  mapMode: MapMode;
   onRefresh: () => void;
   onSettings: () => void;
   onToggleMapMode: () => void;
@@ -19,6 +21,7 @@ const formatClock = (date: Date): string => {
 };
 
 export default function AppBar({ refreshing, mapMode, onRefresh, onSettings, onToggleMapMode }: AppBarProps) {
+  const { t } = useI18n();
   // Decorative clock shown only in the desktop layout (hidden via CSS on mobile).
   // Re-rendering every 15s is plenty since seconds aren't displayed.
   const [clock, setClock] = useState(() => formatClock(new Date()));
@@ -40,8 +43,8 @@ export default function AppBar({ refreshing, mapMode, onRefresh, onSettings, onT
       <div className="appbar-actions">
         <button
           className={"icon-btn" + (mapMode === "windy" ? " icon-btn--active" : "")}
-          title={mapMode === "windy" ? "Switch to RainViewer radar" : "Switch to Windy radar"}
-          aria-label="Toggle map source"
+          title={mapMode === "windy" ? t("map_to_rainviewer") : t("map_to_windy")}
+          aria-label={t("map_toggle")}
           onClick={onToggleMapMode}
         >
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

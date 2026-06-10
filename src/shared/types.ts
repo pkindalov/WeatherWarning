@@ -1,5 +1,6 @@
 export type Level = "safe" | "warning" | "danger";
 export type Trend = "approaching" | "receding" | "steady";
+export type MapMode = "rainviewer" | "windy";
 
 export interface Settings {
   threshold: number; // dBZ
@@ -12,6 +13,7 @@ export interface Settings {
   radiusColorWindy: string; // alert-radius circle colour on the Windy embed
   radiusColorMap: string; // alert-radius circle colour on the radar (Leaflet) map
   showWindyPin: boolean; // town-name label overlaid on the Windy embed
+  mapMode: MapMode; // which map the user last chose; survives reloads
 }
 
 export type LocationKind = "home" | "work" | "family" | "park" | "current" | "other";

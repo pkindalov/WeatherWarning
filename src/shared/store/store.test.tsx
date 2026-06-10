@@ -70,6 +70,17 @@ describe("StoreProvider", () => {
     expect(result.current.getLastAlert(a)).toBeNull(); // alert record cleaned up
   });
 
+  it("remembers the chosen map mode across reloads", () => {
+    const { result } = setup();
+    expect(result.current.settings.mapMode).toBe("windy"); // default view
+
+    act(() => result.current.setSetting("mapMode", "rainviewer"));
+
+    // a fresh provider should come back in the mode the user left
+    const second = setup();
+    expect(second.result.current.settings.mapMode).toBe("rainviewer");
+  });
+
   it("persists settings and last-alert records", () => {
     const { result } = setup();
     let id = "";

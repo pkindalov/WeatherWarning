@@ -112,7 +112,7 @@ export default function SettingsSheet({
             <div className="field-label">{t("set_circle_windy")}</div>
             <div className="field-desc">{t("set_circle_windy_d")}</div>
           </div>
-          <div className="chip-row" style={{ flexWrap: "nowrap" }}>
+          <div className="chip-row chip-row--nowrap">
             <input
               type="color"
               className="color-swatch"
@@ -137,7 +137,7 @@ export default function SettingsSheet({
             <div className="field-label">{t("set_circle_map")}</div>
             <div className="field-desc">{t("set_circle_map_d")}</div>
           </div>
-          <div className="chip-row" style={{ flexWrap: "nowrap" }}>
+          <div className="chip-row chip-row--nowrap">
             <input
               type="color"
               className="color-swatch"
@@ -256,7 +256,7 @@ export default function SettingsSheet({
             <div className="field-label">{t("set_lang")}</div>
             <div className="field-desc">{t("set_lang_d")}</div>
           </div>
-          <div className="chip-row" style={{ flexWrap: "nowrap" }}>
+          <div className="chip-row chip-row--nowrap">
             {(["bg", "en"] as Lang[]).map((l) => (
               <button
                 key={l}
