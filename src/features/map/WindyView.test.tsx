@@ -1,6 +1,6 @@
 import { render } from "@testing-library/react";
 import { beforeEach, describe, expect, it } from "vitest";
-import WindyView, { alertRadiusPx } from "./WindyView";
+import WindyView, { alertRadiusPx, fitEmbedZoom } from "./WindyView";
 import { StoreProvider } from "../../shared/store/StoreContext";
 
 const TRYAVNA = { id: "l1", name: "Tryavna", kind: "other", lat: 42.8667, lon: 25.5 };
@@ -20,6 +20,26 @@ describe("alertRadiusPx", () => {
 
   it("grows with latitude for the same km radius", () => {
     expect(alertRadiusPx(43, 25, 10)).toBeGreaterThan(alertRadiusPx(0, 25, 10));
+  });
+});
+
+describe("fitEmbedZoom", () => {
+  it("keeps the city-level zoom 10 when the circle fits (desktop)", () => {
+    // 25 km circle at Tryavna is ~446px at zoom 10 — plenty of room here
+    expect(fitEmbedZoom(TRYAVNA.lat, 25, 800, 700)).toBe(10);
+  });
+
+  it("zooms out on a phone-sized map so the circle fits on screen", () => {
+    // 446px circle would overflow a 360px-wide map; zoom 9 halves it to ~223px
+    expect(fitEmbedZoom(TRYAVNA.lat, 25, 360, 500)).toBe(9);
+  });
+
+  it("never zooms out past the floor, even in absurdly small boxes", () => {
+    expect(fitEmbedZoom(TRYAVNA.lat, 25, 10, 10)).toBe(5);
+  });
+
+  it("falls back to the default zoom when the box has no size yet", () => {
+    expect(fitEmbedZoom(TRYAVNA.lat, 25, 0, 0)).toBe(10);
   });
 });
 
