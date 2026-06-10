@@ -155,6 +155,20 @@ export default function SettingsSheet({
         </div>
       </div>
 
+      {/* town-name label on the Windy view */}
+      <div className="field">
+        <div className="field-row">
+          <div>
+            <div className="field-label">{t("set_windy_pin")}</div>
+            <div className="field-desc">{t("set_windy_pin_d")}</div>
+          </div>
+          <Toggle
+            on={settings.showWindyPin}
+            onClick={() => setSetting("showWindyPin", !settings.showWindyPin)}
+          />
+        </div>
+      </div>
+
       {/* auto-update */}
       <div className="field">
         <div className="field-row">

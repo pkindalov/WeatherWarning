@@ -89,6 +89,25 @@ describe("WindyView", () => {
     expect(circle!.style.getPropertyValue("--c")).toBe("#14532d");
   });
 
+  it("shows the town-name pin by default", () => {
+    seedLocation();
+    expect(renderView().querySelector(".windy-city-pin")).not.toBeNull();
+  });
+
+  it("hides the town-name pin when showWindyPin is off, keeping the circle", () => {
+    localStorage.setItem(
+      "wheatherwarning.v1",
+      JSON.stringify({
+        settings: { showWindyPin: false },
+        locations: [TRYAVNA],
+        activeId: TRYAVNA.id,
+      }),
+    );
+    const container = renderView();
+    expect(container.querySelector(".windy-city-pin")).toBeNull();
+    expect(container.querySelector(".windy-radius")).not.toBeNull();
+  });
+
   it("colours the circle from the radiusColorWindy setting", () => {
     localStorage.setItem(
       "wheatherwarning.v1",

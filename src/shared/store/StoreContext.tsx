@@ -29,6 +29,7 @@ const DEFAULTS: PersistState = {
     autoRefreshMin: 20,
     radiusColorWindy: DEFAULT_RADIUS_COLORS.windy,
     radiusColorMap: DEFAULT_RADIUS_COLORS.map,
+    showWindyPin: true,
   },
   locations: [],
   activeId: null,

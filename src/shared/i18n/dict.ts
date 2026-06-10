@@ -89,6 +89,9 @@ export const DICT: Record<Lang, Record<string, string>> = {
     set_circle_map: "Цвят на радиуса (радарна карта)",
     set_circle_map_d: "Цвят на кръга върху радарната карта.",
     reset: "Възстанови",
+    set_windy_pin: "Име на града (Windy)",
+    set_windy_pin_d:
+      "Показвай етикет с името на града върху Windy изгледа. Етикетът стои в центъра на екрана и не следва местенето на картата.",
     set_auto: "Автоматично обновяване",
     set_auto_d: "Обновявай радара през избран интервал.",
     every_min: "На всеки {n} мин",
@@ -223,6 +226,9 @@ export const DICT: Record<Lang, Record<string, string>> = {
     set_circle_map: "Radius colour (radar map)",
     set_circle_map_d: "Colour of the circle on the radar map.",
     reset: "Reset",
+    set_windy_pin: "Town name (Windy)",
+    set_windy_pin_d:
+      "Show the town-name label on the Windy view. The label sits at screen centre and does not follow map panning.",
     set_auto: "Auto-update",
     set_auto_d: "Refresh the radar on a timer.",
     every_min: "Every {n} min",

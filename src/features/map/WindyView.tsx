@@ -85,9 +85,11 @@ export default function WindyView() {
               } as CSSProperties
             }
           />
-          <div className="windy-city-pin" aria-hidden="true">
-            <span className="windy-city-pin__name">{loc.name}</span>
-          </div>
+          {settings.showWindyPin && (
+            <div className="windy-city-pin" aria-hidden="true">
+              <span className="windy-city-pin__name">{loc.name}</span>
+            </div>
+          )}
         </>
       )}
     </div>

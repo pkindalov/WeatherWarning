@@ -11,6 +11,7 @@ export interface Settings {
   autoRefreshMin: number;
   radiusColorWindy: string; // alert-radius circle colour on the Windy embed
   radiusColorMap: string; // alert-radius circle colour on the radar (Leaflet) map
+  showWindyPin: boolean; // town-name label overlaid on the Windy embed
 }
 
 export type LocationKind = "home" | "work" | "family" | "park" | "current" | "other";

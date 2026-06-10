@@ -217,6 +217,22 @@ describe("SettingsSheet – radius circle colours", () => {
   });
 });
 
+// ── Windy town-name toggle ───────────────────────────────────────────────────
+
+describe("SettingsSheet – Windy town-name toggle", () => {
+  it("is on by default", () => {
+    renderSheet();
+    expect(toggleInField("Име на града (Windy)")).toHaveClass("on");
+  });
+
+  it("clicking it persists showWindyPin=false and turns the toggle off", () => {
+    renderSheet();
+    fireEvent.click(toggleInField("Име на града (Windy)"));
+    expect(storedSettings().showWindyPin).toBe(false);
+    expect(toggleInField("Име на града (Windy)")).not.toHaveClass("on");
+  });
+});
+
 // ── Auto-refresh toggle ──────────────────────────────────────────────────────
 
 describe("SettingsSheet – auto-refresh toggle", () => {
