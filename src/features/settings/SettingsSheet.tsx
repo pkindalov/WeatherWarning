@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useI18n } from "../../shared/i18n/I18nContext";
-import { useStore } from "../../shared/store/StoreContext";
+import { DEFAULT_RADIUS_COLORS, useStore } from "../../shared/store/StoreContext";
 import * as N from "../alerts/notify";
 import type { Lang } from "../../shared/i18n/dict";
 
@@ -112,13 +112,21 @@ export default function SettingsSheet({
             <div className="field-label">{t("set_circle_windy")}</div>
             <div className="field-desc">{t("set_circle_windy_d")}</div>
           </div>
-          <input
-            type="color"
-            className="color-swatch"
-            value={settings.radiusColorWindy}
-            onChange={(e) => setSetting("radiusColorWindy", e.target.value)}
-            aria-label={t("set_circle_windy")}
-          />
+          <div className="chip-row" style={{ flexWrap: "nowrap" }}>
+            <input
+              type="color"
+              className="color-swatch"
+              value={settings.radiusColorWindy}
+              onChange={(e) => setSetting("radiusColorWindy", e.target.value)}
+              aria-label={t("set_circle_windy")}
+            />
+            <button
+              className="chip"
+              onClick={() => setSetting("radiusColorWindy", DEFAULT_RADIUS_COLORS.windy)}
+            >
+              {t("reset")}
+            </button>
+          </div>
         </div>
       </div>
 
@@ -129,13 +137,21 @@ export default function SettingsSheet({
             <div className="field-label">{t("set_circle_map")}</div>
             <div className="field-desc">{t("set_circle_map_d")}</div>
           </div>
-          <input
-            type="color"
-            className="color-swatch"
-            value={settings.radiusColorMap}
-            onChange={(e) => setSetting("radiusColorMap", e.target.value)}
-            aria-label={t("set_circle_map")}
-          />
+          <div className="chip-row" style={{ flexWrap: "nowrap" }}>
+            <input
+              type="color"
+              className="color-swatch"
+              value={settings.radiusColorMap}
+              onChange={(e) => setSetting("radiusColorMap", e.target.value)}
+              aria-label={t("set_circle_map")}
+            />
+            <button
+              className="chip"
+              onClick={() => setSetting("radiusColorMap", DEFAULT_RADIUS_COLORS.map)}
+            >
+              {t("reset")}
+            </button>
+          </div>
         </div>
       </div>
 

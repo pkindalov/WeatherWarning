@@ -186,6 +186,35 @@ describe("SettingsSheet – radius circle colours", () => {
     fireEvent.change(colorInput("Цвят на радиуса (радарна карта)"), { target: { value: "#aabbcc" } });
     expect(storedSettings().radiusColorMap).toBe("#aabbcc");
   });
+
+  const resetButton = (labelText: string): HTMLButtonElement => {
+    const field = screen.getByText(labelText).closest(".field")!;
+    return field.querySelector<HTMLButtonElement>("button")!;
+  };
+
+  it("the Windy reset returns only the Windy colour to its default", () => {
+    renderSheet();
+    fireEvent.change(colorInput("Цвят на радиуса (Windy)"), { target: { value: "#112233" } });
+    fireEvent.change(colorInput("Цвят на радиуса (радарна карта)"), { target: { value: "#aabbcc" } });
+
+    fireEvent.click(resetButton("Цвят на радиуса (Windy)"));
+
+    expect(storedSettings().radiusColorWindy).toBe("#14532d");
+    expect(colorInput("Цвят на радиуса (Windy)").value).toBe("#14532d");
+    expect(storedSettings().radiusColorMap).toBe("#aabbcc"); // untouched
+  });
+
+  it("the map reset returns only the map colour to its default", () => {
+    renderSheet();
+    fireEvent.change(colorInput("Цвят на радиуса (Windy)"), { target: { value: "#112233" } });
+    fireEvent.change(colorInput("Цвят на радиуса (радарна карта)"), { target: { value: "#aabbcc" } });
+
+    fireEvent.click(resetButton("Цвят на радиуса (радарна карта)"));
+
+    expect(storedSettings().radiusColorMap).toBe("#1f9d72");
+    expect(colorInput("Цвят на радиуса (радарна карта)").value).toBe("#1f9d72");
+    expect(storedSettings().radiusColorWindy).toBe("#112233"); // untouched
+  });
 });
 
 // ── Auto-refresh toggle ──────────────────────────────────────────────────────

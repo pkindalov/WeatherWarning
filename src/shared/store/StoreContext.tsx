@@ -11,6 +11,13 @@ import type { AlertRecord, Level, PersistState, SavedLocation, Settings } from "
 const KEY = "wheatherwarning.v1";
 const MIGRATION_KEY = "wheatherwarning.migrations";
 
+// exported so the settings sheet's reset button restores the same values
+export const DEFAULT_RADIUS_COLORS = {
+  // dark green: the pale --safe green washes out on the Windy embed's basemap
+  windy: "#14532d",
+  map: "#1f9d72", // the map's original safe-level green
+} as const;
+
 const DEFAULTS: PersistState = {
   settings: {
     threshold: 50, // dBZ
@@ -20,9 +27,8 @@ const DEFAULTS: PersistState = {
     vibrate: true,
     autoRefresh: true,
     autoRefreshMin: 20,
-    // dark green: the pale --safe green washes out on the Windy embed's basemap
-    radiusColorWindy: "#14532d",
-    radiusColorMap: "#1f9d72", // the map's original safe-level green
+    radiusColorWindy: DEFAULT_RADIUS_COLORS.windy,
+    radiusColorMap: DEFAULT_RADIUS_COLORS.map,
   },
   locations: [],
   activeId: null,
