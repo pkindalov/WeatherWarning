@@ -1,9 +1,20 @@
 import { render } from "@testing-library/react";
 import { beforeEach, describe, expect, it } from "vitest";
-import WindyView, { alertRadiusPx, fitEmbedZoom } from "./WindyView";
+import WindyView, { alertRadiusPx, cellOffsetPx, fitEmbedZoom } from "./WindyView";
 import { StoreProvider } from "../../shared/store/StoreContext";
+import { dbzColor } from "../radar/core";
+import type { NearestCell } from "../../shared/types";
 
 const TRYAVNA = { id: "l1", name: "Tryavna", kind: "other", lat: 42.8667, lon: 25.5 };
+
+// a hail-grade cell ~10 km north-east of Tryavna, the shape analyze() produces
+const CELL: NearestCell = {
+  distanceKm: 10,
+  bearing: 45,
+  dbz: 55,
+  lat: TRYAVNA.lat + 0.07,
+  lon: TRYAVNA.lon + 0.09,
+};
 
 const seedLocation = () => {
   localStorage.setItem(
@@ -43,15 +54,42 @@ describe("fitEmbedZoom", () => {
   });
 });
 
+describe("cellOffsetPx", () => {
+  it("is zero when the cell sits on the map centre", () => {
+    const { dx, dy } = cellOffsetPx(TRYAVNA.lat, TRYAVNA.lon, TRYAVNA.lat, TRYAVNA.lon, 10);
+    expect(dx).toBeCloseTo(0, 5);
+    expect(dy).toBeCloseTo(0, 5);
+  });
+
+  it("points up (negative dy) for a cell due north and right (positive dx) for one due east", () => {
+    const north = cellOffsetPx(TRYAVNA.lat, TRYAVNA.lon, TRYAVNA.lat + 0.1, TRYAVNA.lon, 10);
+    expect(north.dx).toBeCloseTo(0, 5);
+    expect(north.dy).toBeLessThan(0);
+
+    const east = cellOffsetPx(TRYAVNA.lat, TRYAVNA.lon, TRYAVNA.lat, TRYAVNA.lon + 0.1, 10);
+    expect(east.dx).toBeGreaterThan(0);
+    expect(east.dy).toBeCloseTo(0, 5);
+  });
+
+  it("matches the web-mercator scale used for the radius circle", () => {
+    // 0.1° of longitude at this latitude ≈ 8.18 km east; the pixel offset must
+    // agree with alertRadiusPx for the same distance so circle and marker
+    // share one coordinate space on the overlay
+    const km = 0.1 * 111.32 * Math.cos((TRYAVNA.lat * Math.PI) / 180);
+    const { dx } = cellOffsetPx(TRYAVNA.lat, TRYAVNA.lon, TRYAVNA.lat, TRYAVNA.lon + 0.1, 10);
+    expect(dx).toBeCloseTo(alertRadiusPx(TRYAVNA.lat, km, 10), 0);
+  });
+});
+
 describe("WindyView", () => {
   beforeEach(() => {
     localStorage.clear();
   });
 
-  const renderView = () => {
+  const renderView = (cell: NearestCell | null = null) => {
     const { container } = render(
       <StoreProvider>
-        <WindyView />
+        <WindyView cell={cell} />
       </StoreProvider>,
     );
     return container;
@@ -121,6 +159,28 @@ describe("WindyView", () => {
     const container = renderView();
     expect(container.querySelector(".windy-city-pin")).toBeNull();
     expect(container.querySelector(".windy-radius")).not.toBeNull();
+  });
+
+  it("marks the warning cell and shows its dBZ", () => {
+    seedLocation();
+    const container = renderView(CELL);
+    const marker = container.querySelector<HTMLElement>(".windy-cell");
+    expect(marker).not.toBeNull();
+    expect(marker!.textContent).toContain("55 dBZ");
+    // coloured by the cell's own intensity, same rule as the Leaflet marker
+    expect(marker!.style.getPropertyValue("--c")).toBe(dbzColor(CELL.dbz));
+    // north-east of the town ⇒ right of centre and above it
+    expect(parseFloat(marker!.style.getPropertyValue("--dx"))).toBeGreaterThan(0);
+    expect(parseFloat(marker!.style.getPropertyValue("--dy"))).toBeLessThan(0);
+  });
+
+  it("shows no cell marker when there is no warning", () => {
+    seedLocation();
+    expect(renderView(null).querySelector(".windy-cell")).toBeNull();
+  });
+
+  it("shows no cell marker without a saved location", () => {
+    expect(renderView(CELL).querySelector(".windy-cell")).toBeNull();
   });
 
   it("colours the circle from the radiusColorWindy setting", () => {

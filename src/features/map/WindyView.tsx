@@ -1,5 +1,7 @@
 import { useLayoutEffect, useRef, useState, type CSSProperties } from "react";
 import { useStore } from "../../shared/store/StoreContext";
+import { dbzColor, lonLatToPixel } from "../radar/core";
+import type { NearestCell } from "../../shared/types";
 
 const MAX_EMBED_ZOOM = 10; // city-level view, used whenever the circle fits
 const MIN_EMBED_ZOOM = 5;
@@ -34,7 +36,27 @@ export const fitEmbedZoom = (
   return MIN_EMBED_ZOOM;
 };
 
-export default function WindyView() {
+// Screen offset (px) of a radar cell from the map centre at the embed zoom,
+// in the same web-mercator pixel space as alertRadiusPx, so the warning
+// marker and the radius circle line up on the overlay.
+export const cellOffsetPx = (
+  centerLat: number,
+  centerLon: number,
+  cellLat: number,
+  cellLon: number,
+  zoom: number
+) => {
+  const center = lonLatToPixel(centerLat, centerLon, zoom);
+  const cell = lonLatToPixel(cellLat, cellLon, zoom);
+  return { dx: cell.px - center.px, dy: cell.py - center.py };
+};
+
+interface WindyViewProps {
+  // nearest cell at/over the alert threshold inside the radius (null = no warning)
+  cell: NearestCell | null;
+}
+
+export default function WindyView({ cell }: WindyViewProps) {
   const { locations, activeId, settings } = useStore();
   // same "active location" rule as App.tsx / getActive(): a stale or missing
   // activeId falls back to the first saved location, not the world view
@@ -65,6 +87,7 @@ export default function WindyView() {
     `&type=map&location=coordinates&metricWind=default&metricTemp=default&radarRange=-1`;
 
   const circleDiameterPx = 2 * alertRadiusPx(lat, settings.radiusKm, zoom);
+  const cellOffset = loc && cell ? cellOffsetPx(lat, lon, cell.lat, cell.lon, zoom) : null;
 
   return (
     <div className="mapwrap" ref={wrapRef}>
@@ -90,6 +113,25 @@ export default function WindyView() {
           {settings.showWindyPin && (
             <div className="windy-city-pin" aria-hidden="true">
               <span className="windy-city-pin__name">{loc.name}</span>
+            </div>
+          )}
+          {cell && cellOffset && (
+            <div
+              className="windy-cell"
+              aria-hidden="true"
+              style={
+                {
+                  "--dx": `${Math.round(cellOffset.dx)}px`,
+                  "--dy": `${Math.round(cellOffset.dy)}px`,
+                  // coloured by the cell's own intensity, same rule as the
+                  // Leaflet storm-cell marker (red storm vs magenta hail)
+                  "--c": dbzColor(cell.dbz),
+                } as CSSProperties
+              }
+            >
+              <span className="windy-cell__ring" />
+              <span className="windy-cell__mark">⚠</span>
+              <span className="windy-cell__dbz">{Math.round(cell.dbz)} dBZ</span>
             </div>
           )}
         </>
