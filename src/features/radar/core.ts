@@ -116,6 +116,14 @@ const UB_PALETTE: ReadonlyArray<readonly [number, number, number, number]> = [
 
 const ALPHA_NO_ECHO = 40; // below this the pixel is transparent ⇒ no precip
 
+// Tripwire: a pixel further than this (squared RGB distance) from every palette
+// entry is not a rain colour and must read as null rather than silently snap to
+// the nearest dBZ — e.g. RainViewer's pale-cyan snow ramp would otherwise snap
+// to white and report a phantom 65 dBZ hail core. Live-tile measurements put
+// legitimate deviations (canvas premultiply rounding at low alpha) below ~60
+// and the closest foreign colour (light snow blue vs the 15 dBZ cyan) at ~510.
+const MAX_PALETTE_DIST = 200;
+
 export function colorToDbz(r: number, g: number, b: number, a: number): number | null {
   if (a < ALPHA_NO_ECHO) return null;
   let bestDbz = UB_PALETTE[0][0];
@@ -130,7 +138,7 @@ export function colorToDbz(r: number, g: number, b: number, a: number): number |
       bestDbz = dbz;
     }
   }
-  return bestDbz;
+  return bestDist <= MAX_PALETTE_DIST ? bestDbz : null;
 }
 
 /* ---------- dBZ → label & legend ramp ---------- */

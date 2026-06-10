@@ -98,6 +98,22 @@ describe("colorToDbz (RainViewer Universal Blue lookup)", () => {
     expect(colorToDbz(252, 235, 5, 255)).toBe(35); // ~yellow → 35
     expect(colorToDbz(190, 5, 5, 255)).toBe(50); // ~red → 50
   });
+
+  it("tolerates low-alpha premultiply rounding seen in live tiles", () => {
+    // sampled from a real 0_0 tile: the faint tan band after canvas
+    // un-premultiplies at alpha 46 — must stay a weak echo, not become null
+    expect(colorToDbz(116, 111, 94, 46)).not.toBeNull();
+    expect(colorToDbz(116, 111, 94, 46)).toBeLessThan(20);
+  });
+
+  it("refuses colours that are not on the rain palette (palette-change tripwire)", () => {
+    // RainViewer's Universal Blue *snow* ramp — without a distance cap the
+    // pale cyan snaps to white and reads as a phantom 65 dBZ hail core
+    expect(colorToDbz(191, 255, 255, 255)).toBeNull(); // pale snow cyan
+    expect(colorToDbz(146, 210, 255, 255)).toBeNull(); // light snow blue
+    expect(colorToDbz(0, 63, 255, 255)).toBeNull(); // saturated snow blue
+    expect(colorToDbz(0, 255, 0, 255)).toBeNull(); // RainViewer's green sentinel
+  });
 });
 
 describe("dBZ labels & colours", () => {
