@@ -441,9 +441,10 @@ export async function analyze(loc: SavedLocation, settings: Settings): Promise<A
     if (firstHitFrame == null && f.nearest && f.nearest.distanceKm <= radiusKm) firstHitFrame = f;
     if (firstHitFrame == null && f.centerDbz != null && f.centerDbz >= threshold) firstHitFrame = f;
   }
-  // Only determine trend when nowcast data is available. With no future frames we
-  // have no basis for a direction prediction, so "steady" is the correct default.
-  if (future.length > 0 && (isFinite(futureBest) || isFinite(curDist))) {
+  // Only determine trend when there is a current cell and nowcast data is available.
+  // Without a current cell curDist=Infinity, so futureBest < curDist-1.5 is trivially
+  // true for any finite forecast distance — the ETA path handles that case instead.
+  if (future.length > 0 && isFinite(curDist)) {
     if (futureBest < curDist - 1.5) trend = "approaching";
     else if (futureWorst > curDist + 1.5) trend = "receding";
     else trend = "steady";

@@ -384,6 +384,38 @@ describe("cluster filtering (MIN_CELL_PIXELS)", () => {
     expect(res.trend).toBe("approaching");
   });
 
+  it("reports trend=steady (not approaching) when there is no current cell but nowcast shows one", async () => {
+    // Bug: curDist=Infinity meant futureBest < curDist-1.5 was always true for any
+    // finite nowcast distance, producing trend="approaching" even with no current cell.
+    // The ETA path owns that case; trend should stay "steady".
+    const CURRENT_PATH = "/past_empty";
+    const FUTURE_PATH = "/nowcast_appears";
+
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          host: HOST,
+          radar: {
+            past: [{ time: 1000, path: CURRENT_PATH }],
+            nowcast: [{ time: 1300, path: FUTURE_PATH }],
+          },
+        }),
+      }),
+    );
+
+    // Current frame: no cell. Future frame: cell appears at dx=5 (~4.5 km).
+    stubDomTilesForPathMap({
+      [CURRENT_PATH]: buildPixelData(0),
+      [FUTURE_PATH]: buildPixelData(MIN_CELL_PIXELS, 5),
+    });
+
+    const res = await analyze(CLUSTER_LOC, CLUSTER_SETTINGS);
+    expect(res.nearest).toBeNull();
+    expect(res.trend).toBe("steady");
+  });
+
   it("reports trend=receding via futureWorst when the cell drifts past the hysteresis by the last nowcast frame", async () => {
     // Bug: the old code used futureBest (min distance) for receding detection.
     // A cell barely farther in frame 1 but clearly farther in frame 2 was classified
