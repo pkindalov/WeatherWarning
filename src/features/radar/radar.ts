@@ -57,6 +57,54 @@ export const PRECURSOR_RADIUS_KM = 10;
 // "not closing in" reads as false reassurance. In that case the trend is
 // reported as "overhead" instead. See the trend block in analyze().
 export const OVERHEAD_RAIN_DBZ = 35;
+// Early-warning approach detection. We measure how the nearest threat's real
+// distance to the location changed across the last few radar frames and, if it
+// has been closing in, estimate when it arrives. MIN_CLOSING_KM is the net
+// distance the cell must have closed over the window to count as a genuine
+// approach rather than edge-wobble noise. MIN_CLOSING_SPEED_KMH rejects slow
+// drift that isn't a coherent storm bearing down on you (real cells move well
+// above it). Crucially, neither gate caps *how far out* we warn — that's the
+// user's alert radius alone. The nearest cell is only ever sampled within the
+// configured radius (see sampleFrame), so widening the radius detects closing
+// storms farther away and warns earlier, with no fixed time ceiling fighting it.
+export const MIN_CLOSING_KM = 3;
+export const MIN_CLOSING_SPEED_KMH = 10;
+
+export interface MotionPoint {
+  time: number; // unix seconds (radar frame time)
+  distanceKm: number; // nearest threat's distance to the location in that frame
+}
+
+/**
+ * Decide whether the nearest threat is closing in on the location and, if so,
+ * how many minutes until it arrives — from its real distance over recent frames.
+ * Points may be passed in any order; nulls (frames with no cell) are dropped.
+ * Returns closing=false when there's too little history, the cell is drifting too
+ * slowly to be a real approach, it's already overhead, or it isn't closing at all.
+ */
+export function closingApproach(points: Array<MotionPoint | null>): {
+  closing: boolean;
+  etaMin: number | null;
+} {
+  const valid = points
+    .filter((p): p is MotionPoint => p !== null)
+    .sort((a, b) => a.time - b.time);
+  if (valid.length < 2) return { closing: false, etaMin: null };
+
+  const oldest = valid[0];
+  const newest = valid[valid.length - 1];
+  const closedKm = oldest.distanceKm - newest.distanceKm;
+  const elapsedMin = (newest.time - oldest.time) / 60;
+  // Already on top of you, not enough net closing, or no real time elapsed.
+  if (newest.distanceKm <= 0 || closedKm < MIN_CLOSING_KM || elapsedMin <= 0) {
+    return { closing: false, etaMin: null };
+  }
+
+  const speedKmPerMin = closedKm / elapsedMin;
+  if (speedKmPerMin * 60 < MIN_CLOSING_SPEED_KMH) return { closing: false, etaMin: null };
+  const etaMin = Math.round(newest.distanceKm / speedKmPerMin);
+  return { closing: true, etaMin: Math.max(1, etaMin) };
+}
 const tileCache = new Map<string, Promise<HTMLCanvasElement | null>>();
 
 interface MapsData {
@@ -469,6 +517,28 @@ export async function analyze(loc: SavedLocation, settings: Settings): Promise<A
     eta = Math.max(1, Math.round((firstHitFrame.time - currentFrame.time) / 60));
     etaDbz = firstHitFrame.nearest?.dbz ?? firstHitFrame.centerDbz ?? firstHitFrame.maxDbz ?? null;
     level = "warning"; // pre-warn
+  }
+
+  // Early warning from the storm's *real* movement: the nowcast is only a short,
+  // often-flat forecast, so on its own it kept reporting a steadily-approaching
+  // storm as "Holding" until it was already overhead. The prev (~20 min) and ref
+  // (~40 min) frames are already sampled above for false-echo filtering — reuse
+  // their nearest-cell distances (no extra tiles) to see whether the threat has
+  // been closing the gap to the location, and warn with an ETA before it lands.
+  const motion = closingApproach([
+    ref?.nearest ? { time: frames.past[refIndex].time, distanceKm: ref.nearest.distanceKm } : null,
+    prev?.nearest
+      ? { time: frames.past[prevIndex].time, distanceKm: prev.nearest.distanceKm }
+      : null,
+    cur.nearest ? { time: currentFrame.time, distanceKm: cur.nearest.distanceKm } : null,
+  ]);
+  // Only act on a threat the current frame still confirms — never extrapolate
+  // from a past echo this frame already rejected as a false return.
+  if (cur.nearest && motion.closing) {
+    trend = "approaching";
+    if (eta == null) eta = motion.etaMin;
+    if (etaDbz == null) etaDbz = cur.nearest.dbz ?? cur.maxDbz ?? null;
+    if (level === "safe") level = "warning"; // pre-warn
   }
 
   return {

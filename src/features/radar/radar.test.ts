@@ -1,5 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { frameList, radarTileTemplate } from "./radar";
+import {
+  closingApproach,
+  frameList,
+  MIN_CLOSING_SPEED_KMH,
+  radarTileTemplate,
+} from "./radar";
 import { lonLatToPixel, metresPerPixel } from "./core";
 import type { SavedLocation, Settings } from "../../shared/types";
 
@@ -34,6 +39,94 @@ describe("radarTileTemplate", () => {
     expect(radarTileTemplate("https://rv.example", "/v2/radar/123")).toBe(
       "https://rv.example/v2/radar/123/512/{z}/{x}/{y}/2/0_0.png"
     );
+  });
+});
+
+describe("closingApproach", () => {
+  // 10-minute frame spacing in seconds.
+  const MIN = 60;
+
+  it("returns not-closing with fewer than two valid points", () => {
+    expect(closingApproach([])).toEqual({ closing: false, etaMin: null });
+    expect(closingApproach([{ time: 0, distanceKm: 10 }])).toEqual({
+      closing: false,
+      etaMin: null,
+    });
+    expect(closingApproach([null, { time: 0, distanceKm: 10 }, null])).toEqual({
+      closing: false,
+      etaMin: null,
+    });
+  });
+
+  it("detects a closing storm and estimates arrival from its closing speed", () => {
+    // 18 km → 6 km over 30 min = 0.4 km/min; 6 km left ⇒ ~15 min out.
+    const res = closingApproach([
+      { time: 0, distanceKm: 18 },
+      { time: 30 * MIN, distanceKm: 6 },
+    ]);
+    expect(res.closing).toBe(true);
+    expect(res.etaMin).toBe(15);
+  });
+
+  it("ignores point order — sorts by time before measuring", () => {
+    const ordered = closingApproach([
+      { time: 0, distanceKm: 18 },
+      { time: 30 * MIN, distanceKm: 6 },
+    ]);
+    const shuffled = closingApproach([
+      { time: 30 * MIN, distanceKm: 6 },
+      { time: 0, distanceKm: 18 },
+    ]);
+    expect(shuffled).toEqual(ordered);
+  });
+
+  it("does not flag a receding storm (distance growing)", () => {
+    expect(
+      closingApproach([
+        { time: 0, distanceKm: 6 },
+        { time: 30 * MIN, distanceKm: 18 },
+      ]),
+    ).toEqual({ closing: false, etaMin: null });
+  });
+
+  it("does not flag edge-wobble below the minimum net closing", () => {
+    // Fast enough on paper (2 km / 10 min = 12 km/h) but only 2 km net closing —
+    // within radar position jitter, so the distance floor rejects it.
+    const res = closingApproach([
+      { time: 0, distanceKm: 10 },
+      { time: 10 * MIN, distanceKm: 8 },
+    ]);
+    expect(res.closing).toBe(false);
+  });
+
+  it("does not flag slow drift below the minimum closing speed", () => {
+    // Closes 4 km over 40 min = 6 km/h — too slow to be a storm bearing down.
+    const res = closingApproach([
+      { time: 0, distanceKm: 24 },
+      { time: 40 * MIN, distanceKm: 20 },
+    ]);
+    expect(res.closing).toBe(false);
+    expect(6).toBeLessThan(MIN_CLOSING_SPEED_KMH);
+  });
+
+  it("does not flag a storm already overhead (newest distance 0)", () => {
+    expect(
+      closingApproach([
+        { time: 0, distanceKm: 12 },
+        { time: 30 * MIN, distanceKm: 0 },
+      ]),
+    ).toEqual({ closing: false, etaMin: null });
+  });
+
+  it("warns about a far storm with no time ceiling — reach is the radius's job", () => {
+    // 95 km → 80 km over 30 min = 30 km/h; 80 km left ⇒ 160 min out. A fixed time
+    // horizon would have dropped this; with a big alert radius it must still warn.
+    const res = closingApproach([
+      { time: 0, distanceKm: 95 },
+      { time: 30 * MIN, distanceKm: 80 },
+    ]);
+    expect(res.closing).toBe(true);
+    expect(res.etaMin).toBe(160);
   });
 });
 
@@ -414,6 +507,42 @@ describe("cluster filtering (MIN_CELL_PIXELS)", () => {
     const res = await analyze(CLUSTER_LOC, CLUSTER_SETTINGS);
     expect(res.centerDbz).toBeNull();
     expect(res.trend).toBe("steady");
+  });
+
+  it("warns early (approaching + ETA) when a real cell closes in across past frames", async () => {
+    // The core early-warning case: no nowcast at all, but the storm's own history
+    // shows it marching toward the location — 16 km out ~30 min ago, ~11 km ~20
+    // min ago, ~5.5 km now. The app must say "approaching" and estimate arrival,
+    // instead of sitting on "Holding" until it's overhead.
+    const PAST = ["/closing_0", "/closing_1", "/closing_2", "/closing_3", "/closing_4"];
+
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          host: HOST,
+          radar: {
+            past: PAST.map((path, i) => ({ time: 1000 + i * 600, path })),
+            nowcast: [],
+          },
+        }),
+      }),
+    );
+
+    // ref = past[1] (16 km), prev = past[3] (11 km), cur = past[4] (5.5 km).
+    stubDomTilesForPathMap({
+      [PAST[1]]: buildPixelData(MIN_CELL_PIXELS, 18),
+      [PAST[3]]: buildPixelData(MIN_CELL_PIXELS, 12),
+      [PAST[4]]: buildPixelData(MIN_CELL_PIXELS, 6),
+    });
+
+    const res = await analyze(CLUSTER_LOC, CLUSTER_SETTINGS);
+    expect(res.nearest).not.toBeNull();
+    expect(res.level).toBe("warning");
+    expect(res.trend).toBe("approaching");
+    expect(res.eta).toBeGreaterThan(0);
+    expect(res.eta).toBeLessThanOrEqual(60);
   });
 
   it("reports trend=approaching when a cell moves closer in future frames", async () => {
