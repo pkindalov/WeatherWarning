@@ -58,6 +58,18 @@ describe("closingApproach", () => {
     });
   });
 
+  it("detects a clean multi-frame approach where now is the closest", () => {
+    // 18 → 11 → 5 km: monotonic close-in, newest is the nearest. Guards the new
+    // "closest right now" rule against being over-strict on real approaches.
+    const res = closingApproach([
+      { time: 0, distanceKm: 18 },
+      { time: 20 * MIN, distanceKm: 11 },
+      { time: 40 * MIN, distanceKm: 5 },
+    ]);
+    expect(res.closing).toBe(true);
+    expect(res.etaMin).toBeGreaterThan(0);
+  });
+
   it("detects a closing storm and estimates arrival from its closing speed", () => {
     // 18 km → 6 km over 30 min = 0.4 km/min; 6 km left ⇒ ~15 min out.
     const res = closingApproach([
