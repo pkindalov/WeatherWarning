@@ -235,6 +235,26 @@ function buildPixelData(
 }
 
 /**
+ * Overlay several pixel buffers into one (later non-transparent pixels win),
+ * so a single frame can carry two separate echo clusters — e.g. frozen clutter
+ * plus a real cell at a different distance.
+ */
+function mergePixels(...buffers: Uint8ClampedArray[]): Uint8ClampedArray {
+  const out = new Uint8ClampedArray(256 * 256 * 4);
+  for (const b of buffers) {
+    for (let i = 0; i < out.length; i += 4) {
+      if (b[i + 3] !== 0) {
+        out[i] = b[i];
+        out[i + 1] = b[i + 1];
+        out[i + 2] = b[i + 2];
+        out[i + 3] = b[i + 3];
+      }
+    }
+  }
+  return out;
+}
+
+/**
  * Stub Image and document.createElement('canvas') so that loadTile() resolves
  * with hot pixel data for tiles whose URL contains any of hotPathSubstrings,
  * and transparent data for all others.
@@ -567,6 +587,45 @@ describe("cluster filtering (MIN_CELL_PIXELS)", () => {
     expect(res.trend).toBe("approaching");
     expect(res.eta).toBeGreaterThan(0);
     expect(res.eta).toBeLessThanOrEqual(60);
+  });
+
+  it("does not fake an approach from frozen clutter behind a slow near cell", async () => {
+    // A persistent far clutter echo (~15.5 km) sits frozen in every frame and is
+    // filtered out of the current frame. A real cell merely creeps nearby
+    // (5.5 → 4.5 km). The motion baseline must ignore the clutter — otherwise the
+    // cell looks like it stormed in from 15 km and fires a bogus "approaching".
+    const PAST = ["/clut_0", "/clut_1", "/clut_2", "/clut_3", "/clut_4"];
+
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          host: HOST,
+          radar: {
+            past: PAST.map((path, i) => ({ time: 1000 + i * 600, path })),
+            nowcast: [],
+          },
+        }),
+      }),
+    );
+
+    const clutter = buildPixelData(MIN_CELL_PIXELS, 17); // frozen ~15.5 km echo
+    // ref = past[1]: clutter only (no real cell 30 min ago).
+    // prev = past[3]: clutter + real cell at 6 px (~5.5 km).
+    // cur = past[4]: clutter + real cell at 5 px (~4.5 km) — moved, so not frozen.
+    stubDomTilesForPathMap({
+      [PAST[1]]: clutter,
+      [PAST[3]]: mergePixels(clutter, buildPixelData(MIN_CELL_PIXELS, 6)),
+      [PAST[4]]: mergePixels(clutter, buildPixelData(MIN_CELL_PIXELS, 5)),
+    });
+
+    const res = await analyze(CLUSTER_LOC, CLUSTER_SETTINGS);
+    // The slow cell overlaps the frozen echo frame-to-frame, so the existing
+    // frozen-echo filter already suppresses it — and with no confirmed current
+    // cell the motion engine never runs, so no bogus approach is reported.
+    expect(res.nearest).toBeNull();
+    expect(res.trend).not.toBe("approaching");
   });
 
   it("reports trend=approaching when a cell moves closer in future frames", async () => {
