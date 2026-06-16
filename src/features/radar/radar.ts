@@ -531,8 +531,8 @@ export async function analyze(loc: SavedLocation, settings: Settings): Promise<A
 
   // Early warning from the storm's *real* movement: the nowcast is only a short,
   // often-flat forecast, so on its own it kept reporting a steadily-approaching
-  // storm as "Holding" until it was already overhead. The prev (~20 min) and ref
-  // (~40 min) frames are already sampled above for false-echo filtering — reuse
+  // storm as "Holding" until it was already overhead. The prev (~10 min) and ref
+  // (~30 min) frames are already sampled above for false-echo filtering — reuse
   // their nearest-cell distances (no extra tiles) to see whether the threat has
   // been closing the gap to the location, and warn with an ETA before it lands.
   const motion = closingApproach([
