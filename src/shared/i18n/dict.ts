@@ -51,9 +51,11 @@ export const DICT: Record<Lang, Record<string, string>> = {
     trend_approaching: "Приближава",
     trend_receding: "Отдалечава се",
     trend_steady: "Задържа се",
+    trend_overhead: "Над вас",
     trend_sub_in: "движи се към вас",
     trend_sub_out: "отдалечава се",
     trend_sub_steady: "не се приближава",
+    trend_sub_overhead: "точно сега над вас",
     eta_away: "след ~{eta} мин",
 
     // footer / time
@@ -197,9 +199,11 @@ export const DICT: Record<Lang, Record<string, string>> = {
     trend_approaching: "Approaching",
     trend_receding: "Receding",
     trend_steady: "Holding",
+    trend_overhead: "Overhead",
     trend_sub_in: "moving toward you",
     trend_sub_out: "moving away",
     trend_sub_steady: "not closing in",
+    trend_sub_overhead: "right over you now",
     eta_away: "~{eta} min away",
 
     updated: "Updated {ago} · {clock}",

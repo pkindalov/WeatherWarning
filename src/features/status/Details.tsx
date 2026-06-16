@@ -43,6 +43,7 @@ export default function Details({ result }: DetailsProps) {
     approaching: [`<span class="trend-up">${t("trend_approaching")}</span>`, t("trend_sub_in")],
     receding: [`<span class="trend-down">${t("trend_receding")}</span>`, t("trend_sub_out")],
     steady: [t("trend_steady"), t("trend_sub_steady")],
+    overhead: [`<span class="trend-up">${t("trend_overhead")}</span>`, t("trend_sub_overhead")],
   };
   const [trendV, trendSub] = trendText[result.trend];
   const trendX = result.eta ? t("eta_away", { eta: result.eta }) : trendSub;

@@ -356,6 +356,66 @@ describe("cluster filtering (MIN_CELL_PIXELS)", () => {
     expect(res.trend).toBe("steady");
   });
 
+  it("reports trend=overhead when a steady cell is raining directly over the location", async () => {
+    // Screenshot bug: a cell parked on top of the town (rain overhead) that
+    // isn't getting any closer was reported as "steady / not closing in" — false
+    // reassurance when the storm is already on you. Distance is steady, but with
+    // rain overhead the trend should read "overhead".
+    const CURRENT_PATH = "/past_overhead";
+    const FUTURE_PATH = "/nowcast_overhead";
+
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          host: HOST,
+          radar: {
+            past: [{ time: 1000, path: CURRENT_PATH }],
+            nowcast: [{ time: 1300, path: FUTURE_PATH }],
+          },
+        }),
+      }),
+    );
+
+    // startDx=0 puts a hot pixel in the center 3×3 kernel → centerDbz is set
+    // (cell overhead). Same position in the nowcast → distance is steady.
+    const overhead = buildPixelData(MIN_CELL_PIXELS, 0);
+    stubDomTilesForPathMap({ [CURRENT_PATH]: overhead, [FUTURE_PATH]: overhead });
+
+    const res = await analyze(CLUSTER_LOC, CLUSTER_SETTINGS);
+    expect(res.centerDbz).not.toBeNull();
+    expect(res.trend).toBe("overhead");
+  });
+
+  it("keeps trend=steady when a cell holds nearby but nothing is overhead", async () => {
+    // Cell parked ~9 km away (no echo overhead) that isn't closing in: "holding"
+    // is the honest read here — the overhead override must NOT fire.
+    const CURRENT_PATH = "/past_nearby";
+    const FUTURE_PATH = "/nowcast_nearby";
+
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          host: HOST,
+          radar: {
+            past: [{ time: 1000, path: CURRENT_PATH }],
+            nowcast: [{ time: 1300, path: FUTURE_PATH }],
+          },
+        }),
+      }),
+    );
+
+    const nearby = buildPixelData(MIN_CELL_PIXELS, HOT_DX);
+    stubDomTilesForPathMap({ [CURRENT_PATH]: nearby, [FUTURE_PATH]: nearby });
+
+    const res = await analyze(CLUSTER_LOC, CLUSTER_SETTINGS);
+    expect(res.centerDbz).toBeNull();
+    expect(res.trend).toBe("steady");
+  });
+
   it("reports trend=approaching when a cell moves closer in future frames", async () => {
     const CURRENT_PATH = "/past_approaching";
     const FUTURE_PATH = "/nowcast_approaching";

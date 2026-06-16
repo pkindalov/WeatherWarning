@@ -1,5 +1,5 @@
 export type Level = "safe" | "warning" | "danger";
-export type Trend = "approaching" | "receding" | "steady";
+export type Trend = "approaching" | "receding" | "steady" | "overhead";
 export type MapMode = "rainviewer" | "windy";
 
 export interface Settings {
