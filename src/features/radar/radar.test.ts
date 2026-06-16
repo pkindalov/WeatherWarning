@@ -118,6 +118,18 @@ describe("closingApproach", () => {
     ).toEqual({ closing: false, etaMin: null });
   });
 
+  it("does not flag a storm that passed close and is now receding", () => {
+    // 20 km → 2 km (closest pass) → 12 km now. Net oldest→newest is 8 km at
+    // 12 km/h — clears both the distance and speed gates — yet it's pulling away
+    // right now, so it must not be reported as "approaching".
+    const res = closingApproach([
+      { time: 0, distanceKm: 20 },
+      { time: 20 * MIN, distanceKm: 2 },
+      { time: 40 * MIN, distanceKm: 12 },
+    ]);
+    expect(res.closing).toBe(false);
+  });
+
   it("warns about a far storm with no time ceiling — reach is the radius's job", () => {
     // 95 km → 80 km over 30 min = 30 km/h; 80 km left ⇒ 160 min out. A fixed time
     // horizon would have dropped this; with a big alert radius it must still warn.

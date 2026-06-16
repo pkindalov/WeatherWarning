@@ -95,8 +95,18 @@ export function closingApproach(points: Array<MotionPoint | null>): {
   const newest = valid[valid.length - 1];
   const closedKm = oldest.distanceKm - newest.distanceKm;
   const elapsedMin = (newest.time - oldest.time) / 60;
-  // Already on top of you, not enough net closing, or no real time elapsed.
-  if (newest.distanceKm <= 0 || closedKm < MIN_CLOSING_KM || elapsedMin <= 0) {
+  // A storm that passed close and is now pulling away can still look "net-closer"
+  // across the window (e.g. 20 → 2 → 12 km). Only call it approaching if it's at
+  // its closest right now — otherwise the most recent move was outward.
+  const closestKm = Math.min(...valid.map((p) => p.distanceKm));
+  // Already on top of you, receding from its closest pass, not enough net closing,
+  // or no real time elapsed.
+  if (
+    newest.distanceKm <= 0 ||
+    newest.distanceKm > closestKm ||
+    closedKm < MIN_CLOSING_KM ||
+    elapsedMin <= 0
+  ) {
     return { closing: false, etaMin: null };
   }
 
