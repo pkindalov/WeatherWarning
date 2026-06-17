@@ -122,8 +122,8 @@ describe("dBZ labels & colours", () => {
     expect(dbzLabel(5)).toBe("Weak echo / mist");
     expect(dbzLabel(25)).toBe("Rain / snow");
     expect(dbzLabel(40)).toBe("Heavy rain");
-    expect(dbzLabel(50)).toBe("Буря / Дребна градушка");
-    expect(dbzLabel(55)).toBe("Буря / Дребна градушка");
+    expect(dbzLabel(50)).toBe("Severe storm");
+    expect(dbzLabel(55)).toBe("Severe storm");
     expect(dbzLabel(60)).toBe("Екстремно / Едра градушка");
     expect(dbzLabel(63)).toBe("Екстремно / Едра градушка");
   });

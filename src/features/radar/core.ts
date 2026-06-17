@@ -159,7 +159,7 @@ export const LEGEND: LegendStop[] = [
   { dbz: 0, color: "#88ddee", label: "Weak echo / mist", key: "mist" }, //  0–20: light cyan (UB 15)
   { dbz: 20, color: "#0077aa", label: "Rain / snow", key: "rain" }, // 20–35: blue (UB 25)
   { dbz: 35, color: "#ffaa00", label: "Heavy rain", key: "downpour" }, // 35–50: yellow→orange (UB 40)
-  { dbz: 50, color: "#c10000", label: "Буря / Дребна градушка", key: "hail_small" }, // 50–60: red (UB 50)
+  { dbz: 50, color: "#c10000", label: "Severe storm", key: "hail_small" }, // 50–60: red (UB 50)
   { dbz: 60, color: "#ff77ff", label: "Екстремно / Едра градушка", key: "hail_large" }, // 60+: magenta (UB 60)
 ];
 

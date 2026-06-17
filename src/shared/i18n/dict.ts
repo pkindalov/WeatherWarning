@@ -138,7 +138,7 @@ export const DICT: Record<Lang, Record<string, string>> = {
     lbl_mist: "Слабо ехо / мъгла",
     lbl_rain: "Дъжд / сняг",
     lbl_downpour: "Пороен дъжд",
-    lbl_hail_small: "Буря · дребна градушка",
+    lbl_hail_small: "Тежка буря",
     lbl_hail_large: "Екстремно · едра градушка",
     lbl_none: "Няма ехо",
 
@@ -279,7 +279,7 @@ export const DICT: Record<Lang, Record<string, string>> = {
     lbl_mist: "Weak echo / mist",
     lbl_rain: "Rain / snow",
     lbl_downpour: "Heavy rain",
-    lbl_hail_small: "Storm · small hail",
+    lbl_hail_small: "Severe storm",
     lbl_hail_large: "Extreme · large hail",
     lbl_none: "No echo",
 
