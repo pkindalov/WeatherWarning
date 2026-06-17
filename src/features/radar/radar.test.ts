@@ -199,6 +199,8 @@ const HOT_TILE_URL = `${HOST}${PATH}/256/${ZOOM}/${TILE_X}/${TILE_Y}/2/0_0.png`;
 
 // 55 dBZ color from RainViewer's Universal Blue palette (UB_PALETTE[55]).
 const DBZ_55_RGBA: [number, number, number, number] = [255, 170, 255, 255];
+// 35 dBZ color (UB_PALETTE[35]) — "heavy rain" band, below the 50 dBZ alert threshold.
+const DBZ_35_RGBA: [number, number, number, number] = [255, 238, 0, 255];
 // 20 dBZ color (UB_PALETTE[20]) — a weak "precursor" echo below the alert threshold.
 const DBZ_20_RGBA: [number, number, number, number] = [0, 163, 224, 255];
 
@@ -550,6 +552,43 @@ describe("cluster filtering (MIN_CELL_PIXELS)", () => {
 
     const res = await analyze(CLUSTER_LOC, CLUSTER_SETTINGS);
     expect(res.centerDbz).toBeNull();
+    expect(res.trend).toBe("steady");
+  });
+
+  it("keeps trend=steady when background rain is overhead but the dangerous cell is distant", async () => {
+    // Real-world bug: a wide rain band produces 35 dBZ directly overhead while the
+    // actual storm cell (50 dBZ) sits 9.3 km away. The old code compared centerDbz
+    // against OVERHEAD_RAIN_DBZ (35), so 35 >= 35 flipped "steady" → "overhead" —
+    // a false "right over you now" when the dangerous cell was nowhere near.
+    // Fix: only flip to "overhead" when centerDbz >= threshold (the user's alert level).
+    const CURRENT_PATH = "/past_bg_rain";
+    const FUTURE_PATH = "/nowcast_bg_rain";
+
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          host: HOST,
+          radar: {
+            past: [{ time: 1000, path: CURRENT_PATH }],
+            nowcast: [{ time: 1300, path: FUTURE_PATH }],
+          },
+        }),
+      }),
+    );
+
+    // 35 dBZ pixel directly overhead (background rain, below threshold=50) plus the
+    // real storm cell at HOT_DX (~9 km). Nowcast holds the same pattern → steady.
+    const frame = mergePixels(
+      buildPixelData(1, 0, DBZ_35_RGBA),
+      buildPixelData(MIN_CELL_PIXELS, HOT_DX),
+    );
+    stubDomTilesForPathMap({ [CURRENT_PATH]: frame, [FUTURE_PATH]: frame });
+
+    const res = await analyze(CLUSTER_LOC, CLUSTER_SETTINGS);
+    expect(res.centerDbz).toBe(35);
+    expect(res.nearest).not.toBeNull();
     expect(res.trend).toBe("steady");
   });
 

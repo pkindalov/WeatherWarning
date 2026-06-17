@@ -50,13 +50,6 @@ export const STATIC_ECHO_LOOKBACK_FRAMES = 3;
 // If the cell is real, the next frame (~10 min) confirms it and the alert fires.
 export const PRECURSOR_DBZ = 20;
 export const PRECURSOR_RADIUS_KM = 10;
-// Overhead-rain onset: at/above this the radar shows real precipitation falling
-// directly on the location (the LEGEND "Heavy rain" band starts here). A cell
-// that the nowcast says is "steady" — neither closing in nor pulling away — is
-// still already on top of you when this much is overhead, so reporting it as
-// "not closing in" reads as false reassurance. In that case the trend is
-// reported as "overhead" instead. See the trend block in analyze().
-export const OVERHEAD_RAIN_DBZ = 35;
 // Early-warning approach detection. We measure how the nearest threat's real
 // distance to the location changed across the last few radar frames and, if it
 // has been closing in, estimate when it arrives. MIN_CLOSING_KM is the net
@@ -514,11 +507,11 @@ export async function analyze(loc: SavedLocation, settings: Settings): Promise<A
     else if (futureWorst > curDist + 1.5) trend = "receding";
     else trend = "steady";
   }
-  // A "steady" cell that's already raining on you isn't "not closing in" — it's
-  // on top of you right now. Report that plainly so the trend answers the only
-  // question that matters: is the cloud at my location? (Approaching/receding
-  // already answer "coming"/"going" honestly, so they're left untouched.)
-  if (trend === "steady" && cur.centerDbz != null && cur.centerDbz >= OVERHEAD_RAIN_DBZ) {
+  // A "steady" cell that's already dangerous overhead isn't "not closing in" — it's
+  // on top of you right now. Only flip to "overhead" when centerDbz meets the user's
+  // alert threshold; background rain below threshold (e.g. 35 dBZ with threshold=50)
+  // must not override "steady" while the real storm cell is still km away.
+  if (trend === "steady" && cur.centerDbz != null && cur.centerDbz >= threshold) {
     trend = "overhead";
   }
   // ETA: if currently safe but a cell enters the radius in nowcast
