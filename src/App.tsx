@@ -268,6 +268,10 @@ export default function App() {
   const result = status.kind === "result" ? status.res : null;
   const cell: NearestCell | null =
     status.kind === "result" && !status.res.tainted ? status.res.nearest : null;
+  const otherCells: NearestCell[] =
+    status.kind === "result" && !status.res.tainted && settings.showAllCells
+      ? status.res.allCells
+      : [];
 
   const display = (() => {
     if (status.kind === "system") {
@@ -337,6 +341,7 @@ export default function App() {
             radiusColor={settings.radiusColorMap}
             level={display.level}
             cell={cell}
+            otherCells={otherCells}
             frames={frames}
             host={host}
             baseTime={baseTime}

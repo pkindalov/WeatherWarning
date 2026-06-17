@@ -13,6 +13,7 @@ export interface Settings {
   radiusColorWindy: string; // alert-radius circle colour on the Windy embed
   radiusColorMap: string; // alert-radius circle colour on the radar (Leaflet) map
   showWindyPin: boolean; // town-name label overlaid on the Windy embed
+  showAllCells: boolean; // show all dangerous cells in radius, not just the nearest
   mapMode: MapMode; // which map the user last chose; survives reloads
 }
 
@@ -66,6 +67,7 @@ export interface AnalysisResult {
   centerDbz: number | null;
   maxDbz: number | null;
   nearest: NearestCell | null;
+  allCells: NearestCell[]; // secondary dangerous cells in the radius (nearest excluded)
   threshold: number;
   radiusKm: number;
   frameTime: number;

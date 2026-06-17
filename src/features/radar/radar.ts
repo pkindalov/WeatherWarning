@@ -62,6 +62,13 @@ export const PRECURSOR_RADIUS_KM = 10;
 // storms farther away and warns earlier, with no fixed time ceiling fighting it.
 export const MIN_CLOSING_KM = 3;
 export const MIN_CLOSING_SPEED_KMH = 10;
+// Minimum distance between two distinct cell markers. Any qualifying pixel
+// within this range of an already-chosen cell is part of the same storm blob,
+// not a separate cell. 8 km keeps discrete storm cores separated while merging
+// the pixels of a single elongated cell into one marker.
+const CELL_EXCLUSION_KM = 8;
+// Max secondary (non-nearest) cell markers to show on the map.
+const MAX_SECONDARY_CELLS = 5;
 
 export interface MotionPoint {
   time: number; // unix seconds (radar frame time)
@@ -271,6 +278,10 @@ export async function samplePointDbz(
 interface SampledFrame extends FrameSample {
   echoes: Set<string>;
   wetPixels: Array<{ px: number; py: number }>;
+  // All pixels above threshold that passed false-echo filters — used to derive
+  // secondary cell markers. Each entry is a full NearestCell so the caller can
+  // run greedy clustering without re-computing coordinates.
+  qualifyingPixels: NearestCell[];
 }
 
 // Evidence from earlier frames used to reject false echoes in the frame being
@@ -369,6 +380,7 @@ async function sampleFrame(
   let cellPixels = 0;
   const echoes = new Set<string>();
   const wetPixels: Array<{ px: number; py: number }> = [];
+  const qualifyingPixels: NearestCell[] = [];
   const precursorRadiusPx = (PRECURSOR_RADIUS_KM * 1000) / mpp;
   const step = 1;
   for (let px = minPx; px <= maxPx; px += step) {
@@ -399,17 +411,42 @@ async function sampleFrame(
         }
         cellPixels++;
         const distKm = (distPx * mpp) / 1000;
+        const ll = C.pixelToLonLat(px, py, z);
+        const brg = (Math.atan2(ddx, -ddy) / C.DEG + 360) % 360;
+        const candidate: NearestCell = { distanceKm: distKm, bearing: brg, dbz: v, lat: ll.lat, lon: ll.lon };
+        qualifyingPixels.push(candidate);
         if (!nearest || distKm < nearest.distanceKm) {
-          const ll = C.pixelToLonLat(px, py, z);
-          const brg = (Math.atan2(ddx, -ddy) / C.DEG + 360) % 360;
-          nearest = { distanceKm: distKm, bearing: brg, dbz: v, lat: ll.lat, lon: ll.lon };
+          nearest = candidate;
         }
       }
     }
   }
   // Suppress single-pixel AP artifacts: a real cell needs spatial extent.
   if (cellPixels < MIN_CELL_PIXELS) nearest = null;
-  return { centerDbz, maxDbz, nearest, tainted, echoes, wetPixels };
+  return { centerDbz, maxDbz, nearest, tainted, echoes, wetPixels, qualifyingPixels };
+}
+
+/* ---------- secondary cell clustering ---------- */
+// Approximate flat-earth distance between two lat/lon points (km).
+function approxDistKm(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const dlat = lat1 - lat2;
+  const dlon = (lon1 - lon2) * Math.cos((lat1 * Math.PI) / 180);
+  return Math.sqrt(dlat * dlat + dlon * dlon) * 111;
+}
+
+// Given all qualifying pixels from the current frame, return up to
+// MAX_SECONDARY_CELLS cells that are distinct from `nearest` and from each
+// other (each pair separated by at least CELL_EXCLUSION_KM). The result
+// excludes `nearest` — it is always the primary marker.
+function deriveAllCells(pixels: NearestCell[], nearest: NearestCell): NearestCell[] {
+  const sorted = [...pixels].sort((a, b) => a.distanceKm - b.distanceKm);
+  const chosen: NearestCell[] = [nearest];
+  for (const p of sorted) {
+    if (chosen.length > MAX_SECONDARY_CELLS) break;
+    const tooClose = chosen.some((c) => approxDistKm(c.lat, c.lon, p.lat, p.lon) < CELL_EXCLUSION_KM);
+    if (!tooClose) chosen.push(p);
+  }
+  return chosen.slice(1); // drop nearest — caller keeps it separately
 }
 
 /* ---------- full analysis for a location ---------- */
@@ -552,6 +589,7 @@ export async function analyze(loc: SavedLocation, settings: Settings): Promise<A
     centerDbz: cur.centerDbz,
     maxDbz: cur.maxDbz,
     nearest: cur.nearest,
+    allCells: cur.nearest ? deriveAllCells(cur.qualifyingPixels, cur.nearest) : [],
     threshold,
     radiusKm,
     frameTime: currentFrame.time,

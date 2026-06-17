@@ -554,6 +554,11 @@ body {
     opacity: 0;
   }
 }
+/* secondary (non-nearest) cell markers: same icon, no pulse, reduced opacity */
+.ww-cell--pale .ww-cell-x {
+  opacity: 0.38;
+  box-shadow: none;
+}
 
 /* map overlays */
 .legend {

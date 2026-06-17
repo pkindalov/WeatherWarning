@@ -155,6 +155,20 @@ export default function SettingsSheet({
         </div>
       </div>
 
+      {/* show all storm cells in radius */}
+      <div className="field">
+        <div className="field-row">
+          <div>
+            <div className="field-label">{t("set_all_cells")}</div>
+            <div className="field-desc">{t("set_all_cells_d")}</div>
+          </div>
+          <Toggle
+            on={settings.showAllCells}
+            onClick={() => setSetting("showAllCells", !settings.showAllCells)}
+          />
+        </div>
+      </div>
+
       {/* town-name label on the Windy view */}
       <div className="field">
         <div className="field-row">

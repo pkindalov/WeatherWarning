@@ -30,6 +30,7 @@ const DEFAULTS: PersistState = {
     radiusColorWindy: DEFAULT_RADIUS_COLORS.windy,
     radiusColorMap: DEFAULT_RADIUS_COLORS.map,
     showWindyPin: true,
+    showAllCells: false,
     mapMode: "windy",
   },
   locations: [],

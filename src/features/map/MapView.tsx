@@ -19,6 +19,7 @@ interface MapViewProps {
   radiusColor: string; // user-picked colour for the alert-radius circle
   level: Level;
   cell: NearestCell | null;
+  otherCells: NearestCell[]; // secondary cells to show with reduced opacity
   frames: RadarFrame[];
   host: string;
   baseTime: number; // most recent observed (past) frame time, in seconds
@@ -51,6 +52,7 @@ export default function MapView({
   radiusColor,
   level,
   cell,
+  otherCells,
   frames,
   host,
   baseTime,
@@ -64,6 +66,7 @@ export default function MapView({
   const markerRef = useRef<L.Marker | null>(null);
   const circleRef = useRef<L.Circle | null>(null);
   const cellRef = useRef<L.Marker | null>(null);
+  const paleCellsRef = useRef<L.Marker[]>([]);
   const [ready, setReady] = useState(false);
 
   const activeRef = useRef(active);
@@ -194,6 +197,27 @@ export default function MapView({
       zIndexOffset: 900,
     }).addTo(map);
   }, [ready, cell]);
+
+  /* ---- secondary (pale) cell markers ---- */
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !ready) return;
+    paleCellsRef.current.forEach((m) => map.removeLayer(m));
+    paleCellsRef.current = [];
+    if (otherCells.length === 0) return;
+    paleCellsRef.current = otherCells.map((c) => {
+      const color = dbzColor(c.dbz);
+      return L.marker([c.lat, c.lon], {
+        icon: L.divIcon({
+          className: "ww-cell ww-cell--pale",
+          html: '<div class="ww-cell-x" style="--c:' + color + '">⚠</div>',
+          iconSize: [28, 28],
+          iconAnchor: [14, 14],
+        }),
+        zIndexOffset: 800,
+      }).addTo(map);
+    });
+  }, [ready, otherCells]);
 
   /* ---- recenter / fit on the active location ---- */
   useEffect(() => {

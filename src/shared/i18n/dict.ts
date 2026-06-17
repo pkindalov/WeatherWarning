@@ -96,6 +96,8 @@ export const DICT: Record<Lang, Record<string, string>> = {
     set_circle_map: "Цвят на радиуса (радарна карта)",
     set_circle_map_d: "Цвят на кръга върху радарната карта.",
     reset: "Възстанови",
+    set_all_cells: "Покажи всички бури в радиуса",
+    set_all_cells_d: "Показва всички засечени клетки в радиуса, не само най-близката.",
     set_windy_pin: "Име на града (Windy)",
     set_windy_pin_d:
       "Показвай етикет с името на града върху Windy изгледа. Етикетът стои в центъра на екрана и не следва местенето на картата.",
@@ -239,6 +241,8 @@ export const DICT: Record<Lang, Record<string, string>> = {
     set_circle_map: "Radius colour (radar map)",
     set_circle_map_d: "Colour of the circle on the radar map.",
     reset: "Reset",
+    set_all_cells: "Show all storms in radius",
+    set_all_cells_d: "Mark all detected cells within your alert radius, not just the nearest one.",
     set_windy_pin: "Town name (Windy)",
     set_windy_pin_d:
       "Show the town-name label on the Windy view. The label sits at screen centre and does not follow map panning.",
