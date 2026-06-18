@@ -52,11 +52,11 @@ export const cellOffsetPx = (
 };
 
 interface WindyViewProps {
-  // nearest cell at/over the alert threshold inside the radius (null = no warning)
   cell: NearestCell | null;
+  fitToken: number; // bump to re-center the iframe on the active location
 }
 
-export default function WindyView({ cell }: WindyViewProps) {
+export default function WindyView({ cell, fitToken }: WindyViewProps) {
   const { locations, activeId, settings } = useStore();
   // same "active location" rule as App.tsx / getActive(): a stale or missing
   // activeId falls back to the first saved location, not the world view
@@ -67,6 +67,9 @@ export default function WindyView({ cell }: WindyViewProps) {
   const wrapRef = useRef<HTMLDivElement>(null);
   const [zoom, setZoom] = useState(MAX_EMBED_ZOOM);
   const [exploring, setExploring] = useState(false);
+  // Bumped each time exploration ends so the iframe remounts at the original location.
+  const [snapToken, setSnapToken] = useState(0);
+  const wasExploring = useRef(false);
 
   // The Windy embed is a cross-origin iframe so mousedown inside it never
   // reaches the parent. window.blur fires when focus transfers to the iframe
@@ -83,6 +86,14 @@ export default function WindyView({ cell }: WindyViewProps) {
       window.removeEventListener("focus", show);
     };
   }, []);
+
+  // When exploration ends, snap the iframe back to the user's location.
+  useEffect(() => {
+    if (wasExploring.current && !exploring) {
+      setSnapToken((t) => t + 1);
+    }
+    wasExploring.current = exploring;
+  }, [exploring]);
 
   useLayoutEffect(() => {
     const measure = () => {
@@ -113,7 +124,7 @@ export default function WindyView({ cell }: WindyViewProps) {
       onMouseDown={() => setExploring(true)}
     >
       <iframe
-        key={`${activeId ?? `${lat},${lon}`}@${zoom}`}
+        key={`${activeId ?? `${lat},${lon}`}@${zoom}@${fitToken}@${snapToken}`}
         src={src}
         className="windy-iframe"
         title="Windy radar"

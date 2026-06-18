@@ -333,7 +333,7 @@ export default function App() {
         </aside>
 
         {settings.mapMode === "windy" ? (
-          <WindyView key={activeId ?? "default"} cell={cell} />
+          <WindyView key={activeId ?? "default"} cell={cell} fitToken={fitToken} />
         ) : (
           <MapView
             active={active}
