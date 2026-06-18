@@ -443,10 +443,10 @@ function approxDistKm(lat1: number, lon1: number, lat2: number, lon2: number): n
 function deriveAllCells(pixels: NearestCell[], nearest: NearestCell): NearestCell[] {
   const sorted = [...pixels].sort((a, b) => a.distanceKm - b.distanceKm);
   const chosen: NearestCell[] = [nearest];
-  for (const p of sorted) {
+  for (const pixel of sorted) {
     if (chosen.length > MAX_SECONDARY_CELLS) break;
-    const tooClose = chosen.some((c) => approxDistKm(c.lat, c.lon, p.lat, p.lon) < CELL_EXCLUSION_KM);
-    if (!tooClose) chosen.push(p);
+    const tooClose = chosen.some((existing) => approxDistKm(existing.lat, existing.lon, pixel.lat, pixel.lon) < CELL_EXCLUSION_KM);
+    if (!tooClose) chosen.push(pixel);
   }
   return chosen.slice(1); // drop nearest — caller keeps it separately
 }
