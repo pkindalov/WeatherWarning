@@ -125,10 +125,25 @@ export default function MapView({
       maxZoom: 19,
       zIndex: 10,
     }).addTo(map);
+
+    const container = map.getContainer();
+    const hide = () => {
+      circleRef.current?.setStyle({ opacity: 0, fillOpacity: 0 });
+      markerRef.current?.setOpacity(0);
+    };
+    const show = () => {
+      circleRef.current?.setStyle({ opacity: 0.65, fillOpacity: 0.06 });
+      markerRef.current?.setOpacity(1);
+    };
+    container.addEventListener("mousedown", hide);
+    window.addEventListener("mouseup", show);
+
     mapRef.current = map;
     setReady(true);
 
     return () => {
+      container.removeEventListener("mousedown", hide);
+      window.removeEventListener("mouseup", show);
       map.remove();
       mapRef.current = null;
       radarLayerRef.current = null;
@@ -227,6 +242,8 @@ export default function MapView({
     if (!loc) return;
     const bounds = L.latLng(loc.lat, loc.lon).toBounds(radiusRef.current * 2200);
     map.fitBounds(bounds, { animate: true, padding: [20, 20] });
+    circleRef.current?.setStyle({ opacity: 0.65, fillOpacity: 0.06 });
+    markerRef.current?.setOpacity(1);
   }, [ready, fitToken]);
 
   /* ---- default to the most recent observed frame when frames load ---- */

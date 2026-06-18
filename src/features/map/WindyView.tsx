@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, useState, type CSSProperties } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from "react";
 import { useStore } from "../../shared/store/StoreContext";
 import { dbzColor, lonLatToPixel } from "../radar/core";
 import type { NearestCell } from "../../shared/types";
@@ -66,6 +66,23 @@ export default function WindyView({ cell }: WindyViewProps) {
 
   const wrapRef = useRef<HTMLDivElement>(null);
   const [zoom, setZoom] = useState(MAX_EMBED_ZOOM);
+  const [exploring, setExploring] = useState(false);
+
+  // The Windy embed is a cross-origin iframe so mousedown inside it never
+  // reaches the parent. window.blur fires when focus transfers to the iframe
+  // (i.e. the user clicked inside it), and mouseup/focus fire when they're done.
+  useEffect(() => {
+    const hide = () => setExploring(true);
+    const show = () => setExploring(false);
+    window.addEventListener("blur", hide);
+    window.addEventListener("mouseup", show);
+    window.addEventListener("focus", show);
+    return () => {
+      window.removeEventListener("blur", hide);
+      window.removeEventListener("mouseup", show);
+      window.removeEventListener("focus", show);
+    };
+  }, []);
 
   useLayoutEffect(() => {
     const measure = () => {
@@ -90,7 +107,11 @@ export default function WindyView({ cell }: WindyViewProps) {
   const cellOffset = loc && cell ? cellOffsetPx(lat, lon, cell.lat, cell.lon, zoom) : null;
 
   return (
-    <div className="mapwrap" ref={wrapRef}>
+    <div
+      className="mapwrap"
+      ref={wrapRef}
+      onMouseDown={() => setExploring(true)}
+    >
       <iframe
         key={`${activeId ?? `${lat},${lon}`}@${zoom}`}
         src={src}
@@ -98,7 +119,7 @@ export default function WindyView({ cell }: WindyViewProps) {
         title="Windy radar"
         allowFullScreen
       />
-      {loc && (
+      {loc && !exploring && (
         <>
           <div
             className="windy-radius"
