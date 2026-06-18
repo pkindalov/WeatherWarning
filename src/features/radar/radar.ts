@@ -427,11 +427,13 @@ async function sampleFrame(
 }
 
 /* ---------- secondary cell clustering ---------- */
+const KM_PER_DEG = 111; // approximate km per degree of latitude
+
 // Approximate flat-earth distance between two lat/lon points (km).
 function approxDistKm(lat1: number, lon1: number, lat2: number, lon2: number): number {
   const dlat = lat1 - lat2;
   const dlon = (lon1 - lon2) * Math.cos((lat1 * Math.PI) / 180);
-  return Math.sqrt(dlat * dlat + dlon * dlon) * 111;
+  return Math.sqrt(dlat * dlat + dlon * dlon) * KM_PER_DEG;
 }
 
 // Given all qualifying pixels from the current frame, return up to

@@ -124,8 +124,8 @@ describe("dBZ labels & colours", () => {
     expect(dbzLabel(40)).toBe("Heavy rain");
     expect(dbzLabel(50)).toBe("Severe storm");
     expect(dbzLabel(55)).toBe("Severe storm");
-    expect(dbzLabel(60)).toBe("Екстремно / Едра градушка");
-    expect(dbzLabel(63)).toBe("Екстремно / Едра градушка");
+    expect(dbzLabel(60)).toBe("Extreme · large hail");
+    expect(dbzLabel(63)).toBe("Extreme · large hail");
   });
 
   it("colours hail bands to match RainViewer's red→magenta transition", () => {

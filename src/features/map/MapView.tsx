@@ -150,6 +150,7 @@ export default function MapView({
       markerRef.current = null;
       circleRef.current = null;
       cellRef.current = null;
+      paleCellsRef.current = [];
       setReady(false);
     };
   }, []);
