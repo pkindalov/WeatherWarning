@@ -4,7 +4,7 @@
    React: status/details/footer re-render on language change, so the
    original applyStatic/applyView/view-remembering machinery is gone.
    ============================================================ */
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useI18n } from "./shared/i18n/I18nContext";
 import { useStore } from "./shared/store/StoreContext";
 import * as R from "./features/radar/radar";
@@ -268,10 +268,13 @@ export default function App() {
   const result = status.kind === "result" ? status.res : null;
   const cell: NearestCell | null =
     status.kind === "result" && !status.res.tainted ? status.res.nearest : null;
-  const otherCells: NearestCell[] =
-    status.kind === "result" && !status.res.tainted && settings.showAllCells
-      ? status.res.allCells
-      : [];
+  const otherCells = useMemo<NearestCell[]>(
+    () =>
+      status.kind === "result" && !status.res.tainted && settings.showAllCells
+        ? status.res.allCells
+        : [],
+    [status, settings.showAllCells],
+  );
 
   const display = (() => {
     if (status.kind === "system") {

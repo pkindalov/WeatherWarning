@@ -19,6 +19,7 @@ const makeResult = (over: Partial<AnalysisResult> = {}): AnalysisResult => ({
   centerDbz: null,
   maxDbz: null,
   nearest: null,
+  allCells: [],
   threshold: 35,
   radiusKm: 20,
   frameTime: 1000,

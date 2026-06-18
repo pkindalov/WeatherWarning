@@ -177,6 +177,7 @@ const CLUSTER_SETTINGS: Settings = {
   radiusColorWindy: "#14532d",
   radiusColorMap: "#1f9d72",
   showWindyPin: true,
+  showAllCells: false,
   mapMode: "windy",
 };
 const HOST = "https://rv.test";

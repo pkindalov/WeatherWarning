@@ -89,7 +89,7 @@ describe("WindyView", () => {
   const renderView = (cell: NearestCell | null = null) => {
     const { container } = render(
       <StoreProvider>
-        <WindyView cell={cell} />
+        <WindyView cell={cell} fitToken={0} />
       </StoreProvider>,
     );
     return container;
